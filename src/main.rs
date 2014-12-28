@@ -5,14 +5,16 @@ use tcod::Map;
 use tcod::Key::Special;
 use tcod::Key::Printable;
 use tcod::KeyCode::{Up, Down, Left, Right, Escape, Spacebar};
+use std::rc::Rc;
+use std::cell::{ Ref, RefCell };
 pub use mob::Mob;
-pub use world::{ World, Action, Point, Tile };
+pub use world::{ World, Action, Tile, TileKind };
 pub use world::Direction::*;
 
 pub mod mob;
 pub mod world;
 
-fn render(con: &mut Console, world: &World, hero: &Mob) {
+fn render<'a>(con: &mut Console, world: Ref<'a, World>, hero: &Mob) {
     con.clear();
 
     let dark_wall    = Color { r: 0,   g: 0,   b: 100 };
@@ -27,7 +29,7 @@ fn render(con: &mut Console, world: &World, hero: &Mob) {
         let mut x = 0i;
         for tile in line.iter() {
             match *tile {
-                Tile::Wall => {
+                TileKind::Wall => {
                     con.set_char_background(x, y,  dark_wall, BackgroundFlag::Set);
                     map.set(x, y, false, false)
                 }
@@ -43,36 +45,38 @@ fn render(con: &mut Console, world: &World, hero: &Mob) {
         y += 1;
     }
 
-    con.put_char(hero.point.x as int, hero.point.y as int, '@', BackgroundFlag::Set);
+    con.put_char(hero.tile.x as int, hero.tile.y as int, '@', BackgroundFlag::Set);
     Console::flush();
 }
 
 fn main() {
-    let mut world = World::new();
+    let mut exit  = false;
+    let world     = World::new();
     let mut con = Console::init_root(world.max_x as int + 1, world.max_y as int + 1, "Rogue", false);
-    let mut exit = false;
-    let mut mobs : Vec<Mob> = vec![Mob::new(40, 25)];
+    let world_ref = Rc::new(RefCell::new(world));
+    let tile = Tile::new(world_ref.clone(), 40, 25);
+    let mut mobs : Vec<Mob> = vec![Mob::new(tile)];
     let hero = &mut mobs[0];
 
-    render(&mut con, &world, hero);
+    render(&mut con, world_ref.borrow(), hero);
     while !(Console::window_closed() || exit) {
         let keypress = Console::wait_for_keypress(true);
         match keypress.key {
             Special(Escape) => exit = true,
-            Special(Up)    | Printable('w') => hero.act(&mut world, Action::Walk(N)),
-                             Printable('q') => hero.act(&mut world, Action::Walk(NW)),
-                             Printable('e') => hero.act(&mut world, Action::Walk(NE)),
-            Special(Down)  | Printable('s') => hero.act(&mut world, Action::Walk(S)),
-                             Printable('z') => hero.act(&mut world, Action::Walk(SW)),
-                             Printable('c') => hero.act(&mut world, Action::Walk(SE)),
-            Special(Left)  | Printable('a') => hero.act(&mut world, Action::Walk(W)),
-            Special(Right) | Printable('d') => hero.act(&mut world, Action::Walk(E)),
+            Special(Up)    | Printable('w') => hero.act(Action::Walk(N)),
+                             Printable('q') => hero.act(Action::Walk(NW)),
+                             Printable('e') => hero.act(Action::Walk(NE)),
+            Special(Down)  | Printable('s') => hero.act(Action::Walk(S)),
+                             Printable('z') => hero.act(Action::Walk(SW)),
+                             Printable('c') => hero.act(Action::Walk(SE)),
+            Special(Left)  | Printable('a') => hero.act(Action::Walk(W)),
+            Special(Right) | Printable('d') => hero.act(Action::Walk(E)),
 
-                             Printable('R') => hero.act(&mut world, Action::Rest),
-            Special(Spacebar)               => hero.act(&mut world, Action::Auto),
+                             Printable('R') => hero.act(Action::Rest),
+            Special(Spacebar)               => hero.act(Action::Auto),
             _ => println!("Unmapped key {}", keypress.key)
         }
 
-        render(&mut con, &world, hero);
+        render(&mut con, world_ref.borrow(), hero);
     }
 }

@@ -1,45 +1,28 @@
-use world::{ World, Action, Point, Tile };
+use world::{ Action, Tile, TileKind };
 use world::Direction;
-use world::Direction::*;
 
 pub struct Mob {
-    pub point: Point,
-    pub str: u32,
-    pub int: u32,
-    pub con: u32,
-    pub dex: u32,
-    pub ap: u32,
-    pub hp: u32
+    pub tile: Tile,
+    str: u32,
+    int: u32,
+    con: u32,
+    dex: u32,
+    ap: u32,
+    hp: u32
 }
 
 impl Mob {
-    pub fn new(x: uint, y: uint) -> Mob {
-        Mob { point: Point { x: x, y: y}, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7 }
+    pub fn new(tile: Tile) -> Mob {
+        Mob { tile: tile, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7 }
     }
 
-    fn destination(&self, dir: Direction) -> (uint, uint) {
-        let Point { x, y } = self.point;
-        match dir {
-            H  => (x,     y),
-            NW => (x - 1, y - 1),
-            N  => (x,     y - 1),
-            NE => (x + 1, y - 1),
-            W  => (x - 1, y),
-            E  => (x + 1, y),
-            SW => (x - 1, y + 1),
-            S  => (x,     y + 1),
-            SE => (x + 1, y + 1),
-        }
-    }
+    fn walk(&mut self, dir: Direction) {
+        let n = self.tile.neighbor(dir);
 
-    fn walk(&mut self, world: &World, dir: Direction) {
-        let (x, y) = self.destination(dir);
-
-        if world.at(x, y).is_walkable() {
-            self.point.x = x;
-            self.point.y = y;
+        if n.is_walkable() {
+            self.tile = n;
         } else {
-            println!("There is a {}", world.at(x, y));
+            println!("There is a {}", n.kind());
         }
     }
 
@@ -47,54 +30,39 @@ impl Mob {
         self.hp += 1;
     }
 
-    fn adjacent<'a>(&self, world: &'a World) -> Vec<(Direction, Tile)> {
-        let dirs = [H, NW, N, NE, W, E, SW, S, SE];
-        let mut ts = vec![];
-        for dir in dirs.iter() {
-            let (x, y) = self.destination(*dir);
-            let tile   = world.at(x, y);
-
-            match *tile {
-                Tile::Floor | Tile::Wall => (),
-                _ => ts.push((*dir, tile.clone()))
-            }
-        }
-        ts
-    }
-
-    fn auto(&mut self, world: &mut World) {
-        let ns = self.adjacent(world);
+    fn auto(&mut self) {
+        let ns = self.tile.adjacent();
         for n in ns.iter() {
             let (dir, ref tile) = *n;
 
-            match *tile {
-                Tile::DoorClosed => self.open_close(world, dir),
-                Tile::DoorOpen   => self.open_close(world, dir),
+            match tile.kind() {
+                TileKind::DoorClosed => self.open_close(dir),
+                TileKind::DoorOpen   => self.open_close(dir),
                 _ => ()
             }
-            println!("{} -> {}", dir, tile)
+            println!("{} -> {}", dir, tile.kind())
         }
     }
 
-    fn open_close(&mut self, world: &mut World, dir: Direction) {
-        let (x, y) = self.destination(dir);
+    fn open_close(&mut self, dir: Direction) {
+        let n = self.tile.neighbor(dir);
 
-        match *world.at(x, y) {
-            Tile::DoorClosed => world.set(x, y, Tile::DoorOpen),
-            Tile::DoorOpen   => world.set(x, y, Tile::DoorClosed),
+        match n.kind() {
+            TileKind::DoorClosed => n.set(TileKind::DoorOpen),
+            TileKind::DoorOpen   => n.set(TileKind::DoorClosed),
             _ => ()
         }
     }
 
-    pub fn act(&mut self, world: &mut World, action: Action) {
+    pub fn act(&mut self, action: Action) {
         println!("{}", action);
 
         match action {
-            Action::Walk(direction)  => self.walk(world, direction),
-            Action::Open(direction)  => self.open_close(world, direction),
-            Action::Close(direction) => self.open_close(world, direction),
+            Action::Walk(direction)  => self.walk(direction),
+            Action::Open(direction)  => self.open_close(direction),
+            Action::Close(direction) => self.open_close(direction),
             Action::Rest             => self.rest(),
-            Action::Auto             => self.auto(world)
+            Action::Auto             => self.auto()
         }
     }
 }

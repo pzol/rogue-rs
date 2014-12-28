@@ -1,11 +1,9 @@
-#[deriving(Copy)]
-pub struct Point {
-    pub x: uint,
-    pub y: uint
-}
+use std::rc::Rc;
+use std::cell::RefCell;
+use self::Direction::*;
 
 #[deriving(PartialEq, Show, FromPrimitive, Clone, Copy)]
-pub enum Tile {
+pub enum TileKind {
     Floor       = ' ' as int,
     Wall        = '#' as int,
     DoorClosed  = '+' as int,
@@ -14,11 +12,11 @@ pub enum Tile {
     StairsDown  = '>' as int
 }
 
-impl Tile {
-    fn from_char(stile: char) -> Tile {
+impl TileKind {
+    fn from_char(stile: char) -> TileKind {
         match FromPrimitive::from_int(stile as int) {
             Some(tile) => tile,
-            None       => Tile::Floor
+            None       => TileKind::Floor
         }
     }
 
@@ -28,7 +26,7 @@ impl Tile {
 
     pub fn is_walkable(&self) -> bool {
         match *self {
-            Tile::Wall | Tile::DoorClosed => false,
+            TileKind::Wall | TileKind::DoorClosed => false,
             _ => true
         }
     }
@@ -37,7 +35,7 @@ impl Tile {
 pub struct World {
     pub max_x: uint,
     pub max_y: uint,
-    pub map: Vec<Vec<Tile>>
+    pub map: Vec<Vec<TileKind>>
 }
 
 const DEMO_MAP : [&'static str, ..51] = [
@@ -95,22 +93,79 @@ const DEMO_MAP : [&'static str, ..51] = [
 ];
 
 impl World {
-
     pub fn new() -> World {
         let map = DEMO_MAP.iter().
                         map(|sline| sline.chars().
-                            map(|stile| Tile::from_char(stile)).collect()).collect();
+                            map(|stile| TileKind::from_char(stile)).collect()).collect();
 
         World { max_x: 80u, max_y: 50u, map: map }
     }
 
     /// return a tile a x, y of the map
-    pub fn at(&self, x: uint, y: uint) -> &Tile {
+    pub fn at(&self, x: uint, y: uint) -> &TileKind {
         &self.map[y][x]
     }
 
-    pub fn set(&mut self, x: uint, y: uint, tile: Tile) {
-        self.map[y][x] = tile
+    pub fn set(&mut self, x: uint, y: uint, kind: TileKind) {
+        self.map[y][x] = kind
+    }
+}
+
+pub struct Tile {
+    world: Rc<RefCell<World>>,
+    pub x: uint,
+    pub y: uint
+}
+
+impl Tile {
+    pub fn new(world: Rc<RefCell<World>>, x: uint, y: uint) -> Tile {
+        Tile { world: world, x: x, y: y }
+    }
+
+    pub fn is_walkable(&self) -> bool {
+        self.kind().is_walkable()
+    }
+
+    pub fn kind(&self) -> TileKind {
+        *self.world.borrow().at(self.x, self.y)
+    }
+
+    pub fn set(&self, kind: TileKind) {
+        self.world.borrow_mut().set(self.x, self.y, kind);
+    }
+
+    fn destination(&self, dir: Direction) -> (uint, uint) {
+        let Tile { x, y, .. } = *self;
+        match dir {
+            H  => (x,     y),
+            NW => (x - 1, y - 1),
+            N  => (x,     y - 1),
+            NE => (x + 1, y - 1),
+            W  => (x - 1, y),
+            E  => (x + 1, y),
+            SW => (x - 1, y + 1),
+            S  => (x,     y + 1),
+            SE => (x + 1, y + 1),
+        }
+    }
+
+    pub fn neighbor(&self, dir: Direction) -> Tile {
+        let (x, y) = self.destination(dir);
+        Tile::new(self.world.clone(), x, y)
+    }
+
+    pub fn adjacent<'a>(&self) -> Vec<(Direction, Tile)> {
+        let dirs = [H, NW, N, NE, W, E, SW, S, SE];
+        let mut ts = vec![];
+        for dir in dirs.iter() {
+            let n = self.neighbor(*dir);
+
+            match n.kind() {
+                TileKind::Floor | TileKind::Wall => (),
+                _ => ts.push((*dir, n))
+            }
+        }
+        ts
     }
 }
 
