@@ -1,8 +1,8 @@
-use world::{ Action, Tile, TileKind };
+use world::{ Action, Cell, TileKind };
 use world::Direction;
 
 pub struct Mob {
-    pub tile: Tile,
+    pub cell: Cell,
     str: u32,
     int: u32,
     con: u32,
@@ -12,15 +12,15 @@ pub struct Mob {
 }
 
 impl Mob {
-    pub fn new(tile: Tile) -> Mob {
-        Mob { tile: tile, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7 }
+    pub fn new(cell: Cell) -> Mob {
+        Mob { cell: cell, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7 }
     }
 
     fn walk(&mut self, dir: Direction) {
-        let n = self.tile.neighbor(dir);
+        let n = self.cell.neighbor(dir);
 
         if n.is_walkable() {
-            self.tile = n;
+            self.cell = n;
         } else {
             println!("There is a {}", n.kind());
         }
@@ -31,21 +31,21 @@ impl Mob {
     }
 
     fn auto(&mut self) {
-        let ns = self.tile.adjacent();
+        let ns = self.cell.adjacent();
         for n in ns.iter() {
-            let (dir, ref tile) = *n;
+            let (dir, ref cell) = *n;
 
-            match tile.kind() {
+            match cell.kind() {
                 TileKind::DoorClosed => self.open_close(dir),
                 TileKind::DoorOpen   => self.open_close(dir),
                 _ => ()
             }
-            println!("{} -> {}", dir, tile.kind())
+            println!("{} -> {}", dir, cell.kind())
         }
     }
 
     fn open_close(&mut self, dir: Direction) {
-        let mut n = self.tile.neighbor(dir);
+        let mut n = self.cell.neighbor(dir);
 
         match n.kind() {
             TileKind::DoorClosed => n.set(TileKind::DoorOpen),

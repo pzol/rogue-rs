@@ -8,7 +8,7 @@ use tcod::KeyCode::{Up, Down, Left, Right, Escape, Spacebar};
 use std::rc::Rc;
 use std::cell::{ Ref, RefCell };
 pub use mob::Mob;
-pub use world::{ World, Action, Tile, TileKind };
+pub use world::{ World, Action, Cell, TileKind };
 pub use world::Direction::*;
 
 pub mod mob;
@@ -28,14 +28,14 @@ fn render<'a>(con: &mut Console, world: Ref<'a, World>, hero: &Mob) {
     for line in world.map.iter() {
         let mut x = 0i;
         for tile in line.iter() {
-            match *tile {
+            match tile.kind {
                 TileKind::Wall => {
                     con.set_char_background(x, y,  dark_wall, BackgroundFlag::Set);
                     map.set(x, y, false, false)
                 }
                 _  => {
                     con.set_char_background(x, y,  dark_ground, BackgroundFlag::Set);
-                    con.put_char(x, y, tile.to_char(), BackgroundFlag::None);
+                    con.put_char(x, y, tile.kind.to_char(), BackgroundFlag::None);
                     map.set(x, y, true, true)
                 }
             }
@@ -45,7 +45,7 @@ fn render<'a>(con: &mut Console, world: Ref<'a, World>, hero: &Mob) {
         y += 1;
     }
 
-    con.put_char(hero.tile.x as int, hero.tile.y as int, '@', BackgroundFlag::Set);
+    con.put_char(hero.cell.x as int, hero.cell.y as int, '@', BackgroundFlag::Set);
     Console::flush();
 }
 
@@ -53,7 +53,7 @@ fn main() {
     let mut exit  = false;
     let world     = World::new();
     let mut con = Console::init_root(world.borrow().max_x as int + 1, world.borrow().max_y as int + 1, "Rogue", false);
-    let tile = Tile::new(world.clone(), 40, 25);
+    let tile = Cell::new(world.clone(), 40, 25);
     let mut mobs : Vec<Mob> = vec![Mob::new(tile)];
     let hero = &mut mobs[0];
 

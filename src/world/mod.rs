@@ -2,6 +2,10 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use self::Direction::*;
 
+pub struct Tile {
+    pub kind: TileKind
+}
+
 #[deriving(PartialEq, Show, FromPrimitive, Clone, Copy)]
 pub enum TileKind {
     Floor       = ' ' as int,
@@ -35,7 +39,7 @@ impl TileKind {
 pub struct World {
     pub max_x: uint,
     pub max_y: uint,
-    pub map: Vec<Vec<TileKind>>
+    pub map: Vec<Vec<Tile>>
 }
 
 const DEMO_MAP : [&'static str, ..51] = [
@@ -107,8 +111,8 @@ impl World {
                 let mut line = Vec::new();
                 for stile in sline.chars() {
                     let kind = TileKind::from_char(stile);
-                    // let tile = Tile::new(ref_world.clone(), x, y, kind);
-                    line.push(kind);
+                    let tile = Tile { kind: kind };
+                    line.push(tile);
                     x += 1;
                 }
                 map.push(line);
@@ -120,25 +124,24 @@ impl World {
     }
 
     /// return a tile a x, y of the map
-    pub fn at(&self, x: uint, y: uint) -> TileKind {
-        self.map[y][x]
+    pub fn at(&self, x: uint, y: uint) -> &Tile{
+        &self.map[y][x]
     }
 
     pub fn set(&mut self, x: uint, y: uint, kind: TileKind) {
-        self.map[y][x] = kind
+        self.map[y][x].kind = kind
     }
 }
 
-pub struct Tile {
+pub struct Cell {
     world: Rc<RefCell<World>>,
-    // pub kind: TileKind,
     pub x: uint,
     pub y: uint
 }
 
-impl Tile {
-    pub fn new(world: Rc<RefCell<World>>, x: uint, y: uint) -> Tile {
-        Tile { world: world, x: x, y: y }
+impl Cell {
+    pub fn new(world: Rc<RefCell<World>>, x: uint, y: uint) -> Cell {
+        Cell { world: world, x: x, y: y }
     }
 
     pub fn to_char(&self) -> char {
@@ -150,7 +153,7 @@ impl Tile {
     }
 
     pub fn kind(&self) -> TileKind {
-        self.world.borrow().at(self.x, self.y)
+        self.world.borrow().at(self.x, self.y).kind
     }
 
     pub fn set(&mut self, kind: TileKind) {
@@ -158,7 +161,7 @@ impl Tile {
     }
 
     fn destination(&self, dir: Direction) -> (uint, uint) {
-        let Tile { x, y, .. } = *self;
+        let Cell { x, y, .. } = *self;
         match dir {
             H  => (x,     y),
             NW => (x - 1, y - 1),
@@ -172,13 +175,13 @@ impl Tile {
         }
     }
 
-    pub fn neighbor(&self, dir: Direction) -> Tile {
+    pub fn neighbor(&self, dir: Direction) -> Cell {
         let (x, y) = self.destination(dir);
         // self.world.borrow().at(x, y)
-        Tile::new(self.world.clone(), x, y)
+        Cell::new(self.world.clone(), x, y)
     }
 
-    pub fn adjacent<'a>(&self) -> Vec<(Direction, Tile)> {
+    pub fn adjacent(&self) -> Vec<(Direction, Cell)> {
         let dirs = [H, NW, N, NE, W, E, SW, S, SE];
         let mut ts = vec![];
         for dir in dirs.iter() {
