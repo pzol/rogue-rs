@@ -1,0 +1,10 @@
+[package]
+
+name = "rogue"
+version = "0.0.1"
+authors = ["Piotr Zolnierek <pzolnierek@gmail.com>"]
+
+
+[dependencies.tcod]
+git = "https://github.com/tomassedovic/tcod-rs.git"
+

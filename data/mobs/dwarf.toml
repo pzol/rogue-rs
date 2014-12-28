@@ -1,0 +1,6 @@
+[mob]
+
+name  = "dwarf"
+ap    = [10, 12]
+hp    = [10, 15]
+level = [2, 4]
