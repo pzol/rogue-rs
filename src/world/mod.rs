@@ -93,17 +93,35 @@ const DEMO_MAP : [&'static str, ..51] = [
 ];
 
 impl World {
-    pub fn new() -> World {
-        let map = DEMO_MAP.iter().
-                        map(|sline| sline.chars().
-                            map(|stile| TileKind::from_char(stile)).collect()).collect();
+    pub fn new() -> Rc<RefCell<World>> {
+        let mut raw   = World { max_x: 80u, max_y: 50u, map: Vec::new() };
+        let ref_world = Rc::new(RefCell::new(raw));
+        {
+            let mut world = ref_world.borrow_mut();
 
-        World { max_x: 80u, max_y: 50u, map: map }
+            let mut y = 0u;
+            let mut map = Vec::new();
+
+            for sline in DEMO_MAP.iter() {
+                let mut x = 0u;
+                let mut line = Vec::new();
+                for stile in sline.chars() {
+                    let kind = TileKind::from_char(stile);
+                    // let tile = Tile::new(ref_world.clone(), x, y, kind);
+                    line.push(kind);
+                    x += 1;
+                }
+                map.push(line);
+                y += 1;
+            }
+            world.map = map;
+        }
+        ref_world
     }
 
     /// return a tile a x, y of the map
-    pub fn at(&self, x: uint, y: uint) -> &TileKind {
-        &self.map[y][x]
+    pub fn at(&self, x: uint, y: uint) -> TileKind {
+        self.map[y][x]
     }
 
     pub fn set(&mut self, x: uint, y: uint, kind: TileKind) {
@@ -113,6 +131,7 @@ impl World {
 
 pub struct Tile {
     world: Rc<RefCell<World>>,
+    // pub kind: TileKind,
     pub x: uint,
     pub y: uint
 }
@@ -122,16 +141,20 @@ impl Tile {
         Tile { world: world, x: x, y: y }
     }
 
+    pub fn to_char(&self) -> char {
+        self.kind().to_char()
+    }
+
     pub fn is_walkable(&self) -> bool {
         self.kind().is_walkable()
     }
 
     pub fn kind(&self) -> TileKind {
-        *self.world.borrow().at(self.x, self.y)
+        self.world.borrow().at(self.x, self.y)
     }
 
-    pub fn set(&self, kind: TileKind) {
-        self.world.borrow_mut().set(self.x, self.y, kind);
+    pub fn set(&mut self, kind: TileKind) {
+        self.world.borrow_mut().set(self.x, self.y, kind)
     }
 
     fn destination(&self, dir: Direction) -> (uint, uint) {
@@ -151,6 +174,7 @@ impl Tile {
 
     pub fn neighbor(&self, dir: Direction) -> Tile {
         let (x, y) = self.destination(dir);
+        // self.world.borrow().at(x, y)
         Tile::new(self.world.clone(), x, y)
     }
 

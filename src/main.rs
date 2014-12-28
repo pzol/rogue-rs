@@ -52,13 +52,12 @@ fn render<'a>(con: &mut Console, world: Ref<'a, World>, hero: &Mob) {
 fn main() {
     let mut exit  = false;
     let world     = World::new();
-    let mut con = Console::init_root(world.max_x as int + 1, world.max_y as int + 1, "Rogue", false);
-    let world_ref = Rc::new(RefCell::new(world));
-    let tile = Tile::new(world_ref.clone(), 40, 25);
+    let mut con = Console::init_root(world.borrow().max_x as int + 1, world.borrow().max_y as int + 1, "Rogue", false);
+    let tile = Tile::new(world.clone(), 40, 25);
     let mut mobs : Vec<Mob> = vec![Mob::new(tile)];
     let hero = &mut mobs[0];
 
-    render(&mut con, world_ref.borrow(), hero);
+    render(&mut con, world.borrow(), hero);
     while !(Console::window_closed() || exit) {
         let keypress = Console::wait_for_keypress(true);
         match keypress.key {
@@ -77,6 +76,6 @@ fn main() {
             _ => println!("Unmapped key {}", keypress.key)
         }
 
-        render(&mut con, world_ref.borrow(), hero);
+        render(&mut con, world.borrow(), hero);
     }
 }

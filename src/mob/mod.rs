@@ -45,7 +45,7 @@ impl Mob {
     }
 
     fn open_close(&mut self, dir: Direction) {
-        let n = self.tile.neighbor(dir);
+        let mut n = self.tile.neighbor(dir);
 
         match n.kind() {
             TileKind::DoorClosed => n.set(TileKind::DoorOpen),
