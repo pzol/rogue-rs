@@ -5,14 +5,15 @@ use tcod::Map;
 use tcod::Key::Special;
 use tcod::Key::Printable;
 use tcod::KeyCode::{Up, Down, Left, Right, Escape, Spacebar};
-use std::rc::Rc;
-use std::cell::{ Ref, RefCell };
+use std::cell::Ref;
 pub use mob::Mob;
-pub use world::{ World, Action, Cell, TileKind };
-pub use world::Direction::*;
+use world::{ World, Cell, TileKind };
+use world::Direction::*;
+use game::Action;
 
 pub mod mob;
 pub mod world;
+pub mod game;
 
 fn render<'a>(con: &mut Console, world: Ref<'a, World>, hero: &Mob) {
     con.clear();
@@ -60,22 +61,29 @@ fn main() {
     render(&mut con, world.borrow(), hero);
     while !(Console::window_closed() || exit) {
         let keypress = Console::wait_for_keypress(true);
-        match keypress.key {
-            Special(Escape) => exit = true,
-            Special(Up)    | Printable('w') => hero.act(Action::Walk(N)),
-                             Printable('q') => hero.act(Action::Walk(NW)),
-                             Printable('e') => hero.act(Action::Walk(NE)),
-            Special(Down)  | Printable('s') => hero.act(Action::Walk(S)),
-                             Printable('z') => hero.act(Action::Walk(SW)),
-                             Printable('c') => hero.act(Action::Walk(SE)),
-            Special(Left)  | Printable('a') => hero.act(Action::Walk(W)),
-            Special(Right) | Printable('d') => hero.act(Action::Walk(E)),
+        let action = match keypress.key {
+            Special(Escape) => Action::Exit,
+            Special(Up)    | Printable('w') => Action::Mob(mob::Action::Walk(N)),
+                             Printable('q') => Action::Mob(mob::Action::Walk(NW)),
+                             Printable('e') => Action::Mob(mob::Action::Walk(NE)),
+            Special(Down)  | Printable('s') => Action::Mob(mob::Action::Walk(S)),
+                             Printable('z') => Action::Mob(mob::Action::Walk(SW)),
+                             Printable('c') => Action::Mob(mob::Action::Walk(SE)),
+            Special(Left)  | Printable('a') => Action::Mob(mob::Action::Walk(W)),
+            Special(Right) | Printable('d') => Action::Mob(mob::Action::Walk(E)),
 
-                             Printable('R') => hero.act(Action::Rest),
-            Special(Spacebar)               => hero.act(Action::Auto),
-            _ => println!("Unmapped key {}", keypress.key)
+                             Printable('R') => Action::Mob(mob::Action::Rest),
+            Special(Spacebar)               => Action::Mob(mob::Action::Auto),
+            _ => Action::Unknown(format!("Unmapped key {}", keypress.key).to_string())
+        };
+
+        match action {
+            Action::Exit        => exit = true,
+            Action::Unknown(s)  => println!("{}", s),
+            Action::Mob(moba)   => {
+                hero.act(moba);
+                render(&mut con, world.borrow(), hero);
+            }
         }
-
-        render(&mut con, world.borrow(), hero);
     }
 }
