@@ -1,9 +1,22 @@
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{ RefCell, Ref };
 use self::Direction::*;
 
+pub type WorldRef<'a> = Ref<'a, World>;
+pub type WorldRc = Rc<RefCell<World>>;
+
+#[deriving(Copy, Clone)]
 pub struct Tile {
     pub kind: TileKind
+}
+
+impl Tile {
+    pub fn is_walkable(&self) -> bool {
+        match self.kind {
+            TileKind::Wall | TileKind::DoorClosed => false,
+            _ => true
+        }
+    }
 }
 
 #[deriving(PartialEq, Show, FromPrimitive, Clone, Copy)]
@@ -26,13 +39,6 @@ impl TileKind {
 
     pub fn to_char(&self) -> char {
         (*self).clone() as int as u8 as char
-    }
-
-    pub fn is_walkable(&self) -> bool {
-        match *self {
-            TileKind::Wall | TileKind::DoorClosed => false,
-            _ => true
-        }
     }
 }
 
@@ -97,30 +103,23 @@ const DEMO_MAP : [&'static str, ..51] = [
 ];
 
 impl World {
-    pub fn new() -> Rc<RefCell<World>> {
-        let mut raw   = World { max_x: 80u, max_y: 50u, map: Vec::new() };
-        let ref_world = Rc::new(RefCell::new(raw));
-        {
-            let mut world = ref_world.borrow_mut();
+    pub fn new() -> World {
+        let mut map = Vec::new();
 
-            let mut y = 0u;
-            let mut map = Vec::new();
-
-            for sline in DEMO_MAP.iter() {
-                let mut x = 0u;
-                let mut line = Vec::new();
-                for stile in sline.chars() {
-                    let kind = TileKind::from_char(stile);
-                    let tile = Tile { kind: kind };
-                    line.push(tile);
-                    x += 1;
-                }
-                map.push(line);
-                y += 1;
+        for sline in DEMO_MAP.iter() {
+            let mut line = Vec::new();
+            for stile in sline.chars() {
+                let kind = TileKind::from_char(stile);
+                let tile = Tile { kind: kind };
+                line.push(tile);
             }
-            world.map = map;
+            map.push(line);
         }
-        ref_world
+        World { max_x: 80u, max_y: 50u, map: map }
+    }
+
+    pub fn new_ref() -> Rc<RefCell<World>> {
+        Rc::new(RefCell::new(World::new()))
     }
 
     /// return a tile a x, y of the map
@@ -149,7 +148,7 @@ impl Cell {
     }
 
     pub fn is_walkable(&self) -> bool {
-        self.kind().is_walkable()
+        self.world.borrow().at(self.x, self.y).is_walkable()
     }
 
     pub fn kind(&self) -> TileKind {
@@ -177,7 +176,6 @@ impl Cell {
 
     pub fn neighbor(&self, dir: Direction) -> Cell {
         let (x, y) = self.destination(dir);
-        // self.world.borrow().at(x, y)
         Cell::new(self.world.clone(), x, y)
     }
 
@@ -196,18 +194,10 @@ impl Cell {
     }
 }
 
-#[deriving(Copy, Show)]
+#[deriving(Clone, Copy, Show)]
 pub enum Direction {
     NW, N, NE,
      W, H,  E,
     SW, S, SE
 }
 
-#[deriving(Copy, Show)]
-pub enum Action {
-    Walk(Direction),
-    Rest,
-    Open(Direction),
-    Close(Direction),
-    Auto
-}

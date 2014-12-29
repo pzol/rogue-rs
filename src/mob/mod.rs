@@ -1,8 +1,19 @@
-use world::{ Action, Cell, TileKind };
+use world::{ Cell, TileKind };
 use world::Direction;
 
+#[deriving(Copy, Clone, Show)]
+pub enum Action {
+    Walk(Direction),
+    Rest,
+    Open(Direction),
+    Close(Direction),
+    Auto
+}
+
+#[allow(dead_code)]
 pub struct Mob {
     pub cell: Cell,
+    pub display_char: char,
     str: u32,
     int: u32,
     con: u32,
@@ -12,8 +23,8 @@ pub struct Mob {
 }
 
 impl Mob {
-    pub fn new(cell: Cell) -> Mob {
-        Mob { cell: cell, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7 }
+    pub fn new(display_char: char, cell: Cell) -> Mob {
+        Mob { cell: cell, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7, display_char: display_char }
     }
 
     fn walk(&mut self, dir: Direction) {
@@ -33,14 +44,14 @@ impl Mob {
     fn auto(&mut self) {
         let ns = self.cell.adjacent();
         for n in ns.iter() {
-            let (dir, ref cell) = *n;
+            let (ref dir, ref cell) = *n;
 
             match cell.kind() {
-                TileKind::DoorClosed => self.open_close(dir),
-                TileKind::DoorOpen   => self.open_close(dir),
+                TileKind::DoorClosed => self.open_close(*dir),
+                TileKind::DoorOpen   => self.open_close(*dir),
                 _ => ()
             }
-            println!("{} -> {}", dir, cell.kind())
+            println!("{} -> {}", dir.clone(), cell.kind())
         }
     }
 
