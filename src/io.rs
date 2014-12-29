@@ -12,13 +12,12 @@ use mob;
 
 pub struct Io {
     con: Console,
-    world: world::WorldRc
 }
 
 impl Io {
-    pub fn new(world: world::WorldRc) -> Io {
-        let con = Console::init_root(world.borrow().max_x as int + 1, world.borrow().max_y as int + 1, "Rogue", false);
-        Io { con: con, world: world }
+    pub fn new(world: &world::World) -> Io {
+        let con = Console::init_root(world.max_x as int + 1, world.max_y as int + 1, "Rogue", false);
+        Io { con: con }
     }
 
     pub fn wait_for_action(&self) -> game::Action {
@@ -29,17 +28,17 @@ impl Io {
         let key = self.wait_for_keypress();
         match key {
             Special(Escape) => Action::Exit,
-            Special(Up)    | Printable('w') => Action::Mob(mob::Action::Walk(N)),
-                             Printable('q') => Action::Mob(mob::Action::Walk(NW)),
-                             Printable('e') => Action::Mob(mob::Action::Walk(NE)),
-            Special(Down)  | Printable('s') => Action::Mob(mob::Action::Walk(S)),
-                             Printable('z') => Action::Mob(mob::Action::Walk(SW)),
-                             Printable('c') => Action::Mob(mob::Action::Walk(SE)),
-            Special(Left)  | Printable('a') => Action::Mob(mob::Action::Walk(W)),
-            Special(Right) | Printable('d') => Action::Mob(mob::Action::Walk(E)),
+            Special(Up)    | Printable('w') => Action::Walk(N),
+                             Printable('q') => Action::Walk(NW),
+                             Printable('e') => Action::Walk(NE),
+            Special(Down)  | Printable('s') => Action::Walk(S),
+                             Printable('z') => Action::Walk(SW),
+                             Printable('c') => Action::Walk(SE),
+            Special(Left)  | Printable('a') => Action::Walk(W),
+            Special(Right) | Printable('d') => Action::Walk(E),
 
-                             Printable('R') => Action::Mob(mob::Action::Rest),
-            Special(Spacebar)               => Action::Mob(mob::Action::Auto),
+                             Printable('R') => Action::Rest,
+            Special(Spacebar)               => Action::Auto,
             _ => Action::Unknown(format!("Unmapped key {}", key).to_string())
         }
     }
@@ -53,8 +52,7 @@ impl Io {
         Console::window_closed()
     }
 
-    pub fn render(&mut self, mobs: &Vec<mob::Mob>) {
-        let world = self.world.borrow();
+    pub fn render(&mut self, mobs: &Vec<mob::Mob>, world: &world::World) {
         self.con.clear();
 
         let dark_wall    = Color { r: 0,   g: 0,   b: 100 };
@@ -86,7 +84,7 @@ impl Io {
         }
 
         for mob in mobs.iter() {
-            self.con.put_char(mob.cell.x as int, mob.cell.y as int, mob.display_char, BackgroundFlag::Set);
+            self.con.put_char(mob.pos.x as int, mob.pos.y as int, mob.display_char, BackgroundFlag::Set);
         }
         Console::flush();
     }

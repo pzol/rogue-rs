@@ -1,19 +1,10 @@
-use world::{ Cell, TileKind };
-use world::Direction;
-
-#[deriving(Copy, Clone, Show)]
-pub enum Action {
-    Walk(Direction),
-    Rest,
-    Open(Direction),
-    Close(Direction),
-    Auto
-}
+use world::Pos;
 
 #[allow(dead_code)]
 pub struct Mob {
-    pub cell: Cell,
+    pub pos: Pos,
     pub display_char: char,
+    pub name: String,
     str: u32,
     int: u32,
     con: u32,
@@ -23,57 +14,37 @@ pub struct Mob {
 }
 
 impl Mob {
-    pub fn new(display_char: char, cell: Cell) -> Mob {
-        Mob { cell: cell, ap: 1, hp: 10, str: 7, int: 7, con: 7, dex: 7, display_char: display_char }
-    }
-
-    fn walk(&mut self, dir: Direction) {
-        let n = self.cell.neighbor(dir);
-
-        if n.is_walkable() {
-            self.cell = n;
-        } else {
-            println!("There is a {}", n.kind());
+    pub fn new(name: &str, kind: Mobs, x: uint, y: uint) -> Mob {
+        Mob {
+            name: name.to_string(),
+            pos: Pos { x: x, y: y }, 
+            ap: 1, 
+            hp: 10,
+            str: 7,
+            int: 7,
+            con: 7,
+            dex: 7,
+            display_char: kind.to_char()
         }
     }
 
-    fn rest(&mut self) {
+    pub fn goto(&mut self, pos: Pos) {
+        self.pos = pos;
+    }
+
+    pub fn rest(&mut self) {
         self.hp += 1;
     }
+}
 
-    fn auto(&mut self) {
-        let ns = self.cell.adjacent();
-        for n in ns.iter() {
-            let (ref dir, ref cell) = *n;
+#[deriving(Copy, Clone)]
+pub enum Mobs {
+    Hero   = '@' as int,
+    Canine = 'C' as int
+}
 
-            match cell.kind() {
-                TileKind::DoorClosed => self.open_close(*dir),
-                TileKind::DoorOpen   => self.open_close(*dir),
-                _ => ()
-            }
-            println!("{} -> {}", dir.clone(), cell.kind())
-        }
-    }
-
-    fn open_close(&mut self, dir: Direction) {
-        let mut n = self.cell.neighbor(dir);
-
-        match n.kind() {
-            TileKind::DoorClosed => n.set(TileKind::DoorOpen),
-            TileKind::DoorOpen   => n.set(TileKind::DoorClosed),
-            _ => ()
-        }
-    }
-
-    pub fn act(&mut self, action: Action) {
-        println!("{}", action);
-
-        match action {
-            Action::Walk(direction)  => self.walk(direction),
-            Action::Open(direction)  => self.open_close(direction),
-            Action::Close(direction) => self.open_close(direction),
-            Action::Rest             => self.rest(),
-            Action::Auto             => self.auto()
-        }
+impl Mobs {
+    pub fn to_char(&self) -> char {
+        (*self).clone() as int as u8 as char
     }
 }

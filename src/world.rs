@@ -1,14 +1,9 @@
-use std::rc::Rc;
-use std::cell::{ RefCell, Ref };
 use self::Direction::*;
-
-pub type WorldRef<'a> = Ref<'a, World>;
-pub type WorldRc = Rc<RefCell<World>>;
 
 #[deriving(Copy, Clone)]
 pub struct Pos {
-    x: u32,
-    y: u32
+    pub x: uint,
+    pub y: uint
 }
 
 #[deriving(Copy, Clone)]
@@ -124,50 +119,22 @@ impl World {
         World { max_x: 80u, max_y: 50u, map: map }
     }
 
-    pub fn new_ref() -> Rc<RefCell<World>> {
-        Rc::new(RefCell::new(World::new()))
-    }
-
     /// return a tile a x, y of the map
-    pub fn at(&self, x: uint, y: uint) -> &Tile{
-        &self.map[y][x]
+    pub fn at(&self, pos: Pos) -> &Tile {
+        &self.map[pos.y][pos.x]
     }
 
-    pub fn set(&mut self, x: uint, y: uint, kind: TileKind) {
-        self.map[y][x].kind = kind
-    }
-}
-
-pub struct Cell {
-    world: Rc<RefCell<World>>,
-    pub x: uint,
-    pub y: uint
-}
-
-impl Cell {
-    pub fn new(world: Rc<RefCell<World>>, x: uint, y: uint) -> Cell {
-        Cell { world: world, x: x, y: y }
+    pub fn is_walkable(&self, pos: Pos) -> bool {
+        self.at(pos).is_walkable()
     }
 
-    pub fn to_char(&self) -> char {
-        self.kind().to_char()
+    pub fn set(&mut self, pos: Pos, kind: TileKind) {
+        self.map[pos.y][pos.x].kind = kind
     }
 
-    pub fn is_walkable(&self) -> bool {
-        self.world.borrow().at(self.x, self.y).is_walkable()
-    }
-
-    pub fn kind(&self) -> TileKind {
-        self.world.borrow().at(self.x, self.y).kind
-    }
-
-    pub fn set(&mut self, kind: TileKind) {
-        self.world.borrow_mut().set(self.x, self.y, kind)
-    }
-
-    fn destination(&self, dir: Direction) -> (uint, uint) {
-        let Cell { x, y, .. } = *self;
-        match dir {
+    pub fn destination(pos: Pos, dir: Direction) -> Pos {
+        let Pos { x, y } = pos;
+        let (dx, dy) = match dir {
             H  => (x,     y),
             NW => (x - 1, y - 1),
             N  => (x,     y - 1),
@@ -177,23 +144,21 @@ impl Cell {
             SW => (x - 1, y + 1),
             S  => (x,     y + 1),
             SE => (x + 1, y + 1),
-        }
+        };
+
+        Pos { x: dx, y: dy }
     }
 
-    pub fn neighbor(&self, dir: Direction) -> Cell {
-        let (x, y) = self.destination(dir);
-        Cell::new(self.world.clone(), x, y)
-    }
-
-    pub fn adjacent(&self) -> Vec<(Direction, Cell)> {
+    pub fn adjacent(&self, pos: Pos) -> Vec<(Direction, TileKind)> {
         let dirs = [H, NW, N, NE, W, E, SW, S, SE];
         let mut ts = vec![];
         for dir in dirs.iter() {
-            let n = self.neighbor(*dir);
+            let destination = World::destination(pos, *dir);
+            let tile_kind = self.at(destination).kind;
 
-            match n.kind() {
+            match tile_kind {
                 TileKind::Floor | TileKind::Wall => (),
-                _ => ts.push((*dir, n))
+                _ => ts.push((*dir, tile_kind))
             }
         }
         ts
