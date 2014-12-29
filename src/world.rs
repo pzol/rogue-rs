@@ -6,6 +6,12 @@ pub type WorldRef<'a> = Ref<'a, World>;
 pub type WorldRc = Rc<RefCell<World>>;
 
 #[deriving(Copy, Clone)]
+pub struct Pos {
+    x: u32,
+    y: u32
+}
+
+#[deriving(Copy, Clone)]
 pub struct Tile {
     pub kind: TileKind
 }
