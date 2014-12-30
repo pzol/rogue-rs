@@ -10,8 +10,8 @@ pub mod game;
 
 fn main() {
     let mut game = Game::new();
-    let hero = mob::Mob::new("Hero", mob::Mobs::Hero, 40, 25);
-    let dog  = mob::Mob::new("Fido", mob::Mobs::Canine, 42, 26);
+    let hero = mob::Mob::new("Hero", mob::MobKind::Hero, 40, 25);
+    let dog  = mob::Mob::new("Fido", mob::MobKind::Canine, 42, 26);
     game.add_mob(hero);
     game.add_mob(dog);
     let mut io   = io::Io::new(&game.world);

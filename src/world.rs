@@ -1,6 +1,6 @@
 use self::Direction::*;
 
-#[deriving(Copy, Clone)]
+#[deriving(Copy, Clone, PartialEq, Show)]
 pub struct Pos {
     pub x: uint,
     pub y: uint

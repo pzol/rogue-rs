@@ -1,23 +1,27 @@
 use world::Pos;
+use std::fmt;
 
 #[allow(dead_code)]
+#[deriving(Clone, Show)]
 pub struct Mob {
     pub pos: Pos,
     pub display_char: char,
     pub name: String,
-    str: u32,
-    int: u32,
-    con: u32,
-    dex: u32,
-    ap: u32,
-    hp: u32
+    pub kind: MobKind,
+    pub str: uint,
+    int: uint,
+    con: uint,
+    dex: uint,
+    ap: uint,
+    pub hp: uint
 }
 
 impl Mob {
-    pub fn new(name: &str, kind: Mobs, x: uint, y: uint) -> Mob {
+    pub fn new(name: &str, kind: MobKind, x: uint, y: uint) -> Mob {
         Mob {
             name: name.to_string(),
-            pos: Pos { x: x, y: y }, 
+            pos: Pos { x: x, y: y },
+            kind: kind,
             ap: 1, 
             hp: 10,
             str: 7,
@@ -32,18 +36,22 @@ impl Mob {
         self.pos = pos;
     }
 
-    pub fn rest(&mut self) {
-        self.hp += 1;
+    pub fn inc_hp(&mut self, hp: uint) {
+        self.hp += hp;
+    }
+
+    pub fn dec_hp(&mut self, hp: uint) {
+        self.hp -= hp;
     }
 }
 
-#[deriving(Copy, Clone)]
-pub enum Mobs {
+#[deriving(Copy, Clone, Show)]
+pub enum MobKind {
     Hero   = '@' as int,
     Canine = 'C' as int
 }
 
-impl Mobs {
+impl MobKind {
     pub fn to_char(&self) -> char {
         (*self).clone() as int as u8 as char
     }
