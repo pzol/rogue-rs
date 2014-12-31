@@ -2,8 +2,9 @@
 extern crate tcod;
 
 use game::{ Action, Game };
+use tcod_adapter as io;
 
-mod io;
+mod tcod_adapter;
 pub mod mob;
 pub mod world;
 pub mod game;
@@ -14,10 +15,11 @@ fn main() {
     let dog  = mob::Mob::new("Fido", mob::MobKind::Canine, 42, 26);
     game.add_mob(hero);
     game.add_mob(dog);
-    let mut io   = io::Io::new(&game.world);
+    let io      = io::input::Input::new();
+    let mut re  = io::output::Output::new(&game.world);
     
     loop {
-        io.render(&game.mobs, &game.world);
+        re.render(&game.mobs, &game.world);
         match io.wait_for_action() {
             Action::Exit        => break,
             Action::Unknown(s)  => println!("{}", s),
