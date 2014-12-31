@@ -38,6 +38,7 @@ impl Io {
             Special(Right) | Printable('d') => Action::Walk(E),
 
                              Printable('R') => Action::Rest,
+                             Printable('l') => Action::Look,
             Special(Spacebar)               => Action::Auto,
             _ => Action::Unknown(format!("Unmapped key {}", key).to_string())
         }

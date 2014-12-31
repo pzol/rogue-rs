@@ -11,7 +11,8 @@ pub enum Action {
     Open(Direction),
     Close(Direction),
     Rest,
-    Auto
+    Auto,
+    Look
 }
 
 pub struct Game {
@@ -19,6 +20,11 @@ pub struct Game {
     pub mobs:  Vec<mob::Mob>
 }
 
+
+/// Combined information about what's going on on a tile
+/// which Mob, Items, etc
+///
+/// its state is frozen during creation and contains no references, so it can be easily copied around
 #[deriving(Clone)]
 struct TileInfo {
     is_walkable: bool,
@@ -39,12 +45,6 @@ impl TileInfo {
     }
 }
 
-enum Walk<'a> {
-    CanWalk(Pos),
-    CannotWalk(TileKind),
-    OtherMob(Pos, &'a mob::Mob)
-}
-
 impl Game {
     pub fn new() -> Game {
         Game { world: World::new(), mobs: vec![] }
@@ -63,27 +63,9 @@ impl Game {
             Action::Close(direction) => self.open_close(direction),
             Action::Rest             => self.mobs[0].dec_hp(1),
             Action::Auto             => self.auto(),
+            Action::Look             => self.look(),
             _  => ()
         }
-    }
-
-    fn open_close(&mut self, dir: Direction) {
-        let pos = self.mobs[0].pos;
-        let dst = World::destination(pos, dir);
-        let tile = self.world.at(dst).kind;
-        match tile {
-            TileKind::DoorClosed => self.world.set(dst, TileKind::DoorOpen),
-            TileKind::DoorOpen   => self.world.set(dst, TileKind::DoorClosed),
-            _ => ()
-        }
-    }
-
-    fn current_pos(&mut self) -> Pos {
-        self.mobs[0].pos
-    }
-
-    fn tile_info(&mut self, pos: Pos) -> TileInfo {
-        TileInfo::new(self, pos)
     }
 
     fn walk(&mut self, dir: Direction) {
@@ -97,12 +79,42 @@ impl Game {
         }
     }
 
-    fn hero_mut(&mut self) -> &mut mob::Mob {
-        &mut self.mobs[0]
+    fn current_pos(&mut self) -> Pos {
+        self.mobs[0].pos
+    }
+
+    fn tile_info(&mut self, pos: Pos) -> TileInfo {
+        TileInfo::new(self, pos)
+    }
+
+    fn attack(&mut self, pos: Pos) {
+        let (victim, dmg) = {
+            let hero   = self.hero();
+            let victim = self.mob_idx_at(pos).unwrap();
+        
+            let dmg = Game::dmg(hero);
+            (victim, dmg)
+        };
+
+        let mut monster = &mut self.mobs[victim];
+        monster.dec_hp(dmg);
+        println!("You hit {}, the {} for {}/{} hp!", monster.name, monster.kind, dmg, monster.hp);
+    }
+
+    fn mob_idx_at(&self, pos: Pos) -> Option<uint> {
+        self.mobs.iter().position(|m| m.pos == pos)
     }
 
     fn move_hero(&mut self, pos: Pos) {
         self.hero_mut().goto(pos);
+    }
+
+    fn hero(&self) -> &mob::Mob {
+        &self.mobs[0]
+    }
+
+    fn hero_mut(&mut self) -> &mut mob::Mob {
+        &mut self.mobs[0]
     }
 
     fn dmg(mob: &mob::Mob) -> uint {
@@ -110,16 +122,15 @@ impl Game {
         rng.gen_range(1u, mob.str as uint)
     }
 
-    fn attack(&mut self, pos: Pos) {
-        let (hero, mob) = {
-            let (heroes, mobs) = self.mobs.split_at_mut(1);
-            let idx = mobs.iter().position(|m| m.pos == pos).unwrap();
-            (&mut heroes[0], &mut mobs[idx])
-        };
-
-        let dmg = Game::dmg(hero);
-        mob.dec_hp(dmg);
-        println!("You hit {}, the {} for {}/{} hp!", mob.name, mob.kind, dmg, mob.hp);
+    fn open_close(&mut self, dir: Direction) {
+        let pos = self.mobs[0].pos;
+        let dst = World::destination(pos, dir);
+        let tile = self.world.at(dst).kind;
+        match tile {
+            TileKind::DoorClosed => self.world.set(dst, TileKind::DoorOpen),
+            TileKind::DoorOpen   => self.world.set(dst, TileKind::DoorClosed),
+            _ => ()
+        }
     }
 
     fn auto(&mut self) {
@@ -136,5 +147,9 @@ impl Game {
             }
             println!("{} -> {}", dir.clone(), tile_kind)
         }
+    }
+
+    fn look(&mut self) {
+        println!("Look around");
     }
 }

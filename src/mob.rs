@@ -1,5 +1,4 @@
 use world::Pos;
-use std::fmt;
 
 #[allow(dead_code)]
 #[deriving(Clone, Show)]
