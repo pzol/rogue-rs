@@ -15,12 +15,12 @@ fn main() {
     let dog  = mob::Mob::new("Fido", mob::MobKind::Canine, 42, 26);
     game.add_mob(hero);
     game.add_mob(dog);
-    let io      = io::input::Input::new();
-    let mut re  = io::output::Output::new(&game.world);
+    let inp     = io::input::Input::new();
+    let mut out = io::output::Output::new(&game.world);
     
     loop {
-        re.render(&game.mobs, &game.world);
-        match io.wait_for_action() {
+        out.render(&game.mobs, &game.world);
+        match inp.wait_for_action() {
             Action::Exit        => break,
             Action::Unknown(s)  => println!("{}", s),
             action @ _          => game.act(action)

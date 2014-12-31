@@ -1,11 +1,10 @@
-use tcod::{ Console, BackgroundFlag, Color, Map, Key };
+use tcod::{ Console, Key };
 use tcod::Key::Special;
 use tcod::Key::Printable;
 use tcod::KeyCode::{Up, Down, Left, Right, Escape, Spacebar};
 
 use game;
 use game::Action;
-use world;
 use world::Direction::*;
 
 pub struct Input;
@@ -14,6 +13,7 @@ impl Input {
     pub fn new() -> Input {
         Input
     }
+
     pub fn wait_for_action(&self) -> game::Action {
         if self.is_window_closed() {
             return Action::Exit

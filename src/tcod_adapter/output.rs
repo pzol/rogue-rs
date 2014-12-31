@@ -1,6 +1,4 @@
-use tcod::{ Console, BackgroundFlag, Color, Map, Key };
-use game;
-use game::Action;
+use tcod::{ Console, BackgroundFlag, Color, Map };
 use world;
 use mob;
 use world::TileKind;
