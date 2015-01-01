@@ -1,19 +1,8 @@
 use mob;
 use std::rand::Rng;
 use world::{ World, Direction, TileKind, Pos };
-
-#[deriving(Clone, Show)]
-pub enum Action {
-    Exit,
-    Unknown(String),
-
-    Walk(Direction),
-    Open(Direction),
-    Close(Direction),
-    Rest,
-    Auto,
-    Look
-}
+use input;
+use input::Command;
 
 pub struct Game {
     pub world: World,
@@ -54,16 +43,30 @@ impl Game {
         self.mobs.push(mob)
     }
 
-    pub fn act(&mut self, action: Action) {
-        println!("{}", action);
+    pub fn update(&mut self, cmd: input::Command) {
+        use mob::Behavior::{ Heroic, Animalic };
 
-        match action {
-            Action::Walk(direction)  => self.walk(direction),
-            Action::Open(direction)  => self.open_close(direction),
-            Action::Close(direction) => self.open_close(direction),
-            Action::Rest             => self.mobs[0].dec_hp(1),
-            Action::Auto             => self.auto(),
-            Action::Look             => self.look(),
+        let bs : Vec<mob::Behavior> = { self.mobs.iter().map(|m| m.behavior ).collect() };
+        // let q // TODO
+
+        for (idx, b) in bs.iter().enumerate() {
+            match *b {
+                Heroic   => self.act(&cmd, idx),
+                Animalic => {}
+            } 
+        }
+    }
+
+    pub fn act(&mut self, cmd: &Command, mob_idx: uint) {
+        println!("{}", cmd);
+
+        match *cmd {
+            Command::Walk(direction)  => self.walk(direction),
+            Command::Open(direction)  => self.open_close(direction),
+            Command::Close(direction) => self.open_close(direction),
+            Command::Rest             => self.mobs[0].dec_hp(1),
+            Command::Auto             => self.auto(),
+            Command::Look             => self.look(),
             _  => ()
         }
     }

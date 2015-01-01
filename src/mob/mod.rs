@@ -1,22 +1,25 @@
 use world::Pos;
+pub use self::behavior::Behavior;
+pub mod behavior;
 
 #[allow(dead_code)]
-#[deriving(Clone, Show)]
+#[deriving(Clone)]
 pub struct Mob {
     pub pos: Pos,
     pub display_char: char,
     pub name: String,
-    pub kind: MobKind,
+    pub kind: Kind,
     pub str: uint,
     int: uint,
     con: uint,
     dex: uint,
     ap: uint,
-    pub hp: uint
+    pub hp: uint,
+    pub behavior: Behavior
 }
 
-impl Mob {
-    pub fn new(name: &str, kind: MobKind, x: uint, y: uint) -> Mob {
+impl<'a> Mob {
+    pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: Behavior) -> Mob {
         Mob {
             name: name.to_string(),
             pos: Pos { x: x, y: y },
@@ -27,7 +30,8 @@ impl Mob {
             int: 7,
             con: 7,
             dex: 7,
-            display_char: kind.to_char()
+            display_char: kind.to_char(),
+            behavior: behavior
         }
     }
 
@@ -45,12 +49,12 @@ impl Mob {
 }
 
 #[deriving(Copy, Clone, Show)]
-pub enum MobKind {
+pub enum Kind {
     Hero   = '@' as int,
     Canine = 'C' as int
 }
 
-impl MobKind {
+impl Kind {
     pub fn to_char(&self) -> char {
         (*self).clone() as int as u8 as char
     }

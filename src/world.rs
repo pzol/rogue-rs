@@ -124,10 +124,6 @@ impl World {
         &self.map[pos.y][pos.x]
     }
 
-    pub fn is_walkable(&self, pos: Pos) -> bool {
-        self.at(pos).is_walkable()
-    }
-
     pub fn set(&mut self, pos: Pos, kind: TileKind) {
         self.map[pos.y][pos.x].kind = kind
     }
