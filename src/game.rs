@@ -118,7 +118,7 @@ impl Game {
     }
 
     fn dmg(mob: &mob::Mob) -> uint {
-        let mut rng = ::std::rand::task_rng();
+        let mut rng = ::std::rand::thread_rng();
         rng.gen_range(1u, mob.str as uint)
     }
 
