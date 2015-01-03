@@ -1,5 +1,4 @@
 use world::Pos;
-pub use self::behavior::Behavior;
 pub mod behavior;
 
 #[allow(dead_code)]
@@ -15,11 +14,11 @@ pub struct Mob {
     dex: uint,
     ap: uint,
     pub hp: uint,
-    pub behavior: Behavior
+    pub behavior: behavior::Kind
 }
 
 impl<'a> Mob {
-    pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: Behavior) -> Mob {
+    pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: behavior::Kind) -> Mob {
         Mob {
             name: name.to_string(),
             pos: Pos { x: x, y: y },

@@ -161,10 +161,11 @@ impl World {
     }
 }
 
-#[deriving(Clone, Copy, Show)]
+#[deriving(Clone, Copy, Show, FromPrimitive)]
 pub enum Direction {
+    H, // here
     NW, N, NE,
-     W, H,  E,
+     W,     E,
     SW, S, SE
 }
 
