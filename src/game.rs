@@ -1,6 +1,5 @@
 extern crate collections;
 use std::rand::Rng;
-use std::cell::RefCell;
 
 use mob;
 use world::{ World, Direction, TileKind, Pos };
@@ -33,7 +32,7 @@ impl TileInfo {
     }
 
     fn mob_at(monsters: &Vec<mob::Mob>, pos: Pos) -> Option<mob::Mob> {
-        monsters.iter().skip(1).find(|mob| mob.pos == pos).map(|mob| mob.clone())
+        monsters.iter().skip(1).find(|mob| mob.pos() == pos).map(|mob| mob.clone())
     }
 }
 
@@ -52,29 +51,31 @@ impl Game {
         self.mobs.push(mob)
     }
 
-    fn monsters(&mut self) -> &mut [mob::Mob] {
-        self.mobs.slice_from_mut(1)
+    fn monsters(&self) -> &[mob::Mob] {
+        self.mobs.slice_from(1)
     }
 
     pub fn update(&mut self, cmd: input::Command) {
-        let hero_pos = self.hero_pos();
         self.act(&cmd);
+        self.update_monsters();
+    }
 
-        let game : &Game = unsafe { ::std::mem::transmute_copy(&self) };
+    pub fn update_monsters(&self) {
+        let hero_pos = self.hero().pos();
 
-        for m in self.monsters().iter_mut() {
+        for m in self.monsters().iter() {
             let dir = m.behavior.act(m, hero_pos);
-            let dst  = World::destination(m.pos, dir);
+            let dst = World::destination(m.pos(), dir);
 
-            match game.can_goto(dst) {
+            match self.try_move(dst) {
                 Movement::Goto(dst)      => m.goto(dst),
-                Movement::Attack(dst)    => println!("I cannot attack, yet"),
-                Movement::Obstacle(kind) => println!("There is a {}", kind)
+                Movement::Attack(dst)    => println!("I have not learned to attack, yet."),
+                Movement::Obstacle(kind) => println!("There is a {}.", kind)
             }
         }
     }
 
-    fn can_goto(&self, dst: Pos) -> Movement {
+    fn try_move(&self, dst: Pos) -> Movement {
         let tile = self.tile_info(dst);
 
         match tile {
@@ -100,7 +101,7 @@ impl Game {
 
 
     fn walk(&mut self, dir: Direction) {
-        let dst  = World::destination(self.hero_pos(), dir);
+        let dst  = World::destination(self.hero().pos(), dir);
         let tile = self.tile_info(dst);
 
         match tile {
@@ -108,10 +109,6 @@ impl Game {
             TileInfo { is_walkable: true, mob: None, ..}    => self.hero_mut().goto(dst),
             _ => println!("There is a {}", tile.kind)
         }
-    }
-
-    fn hero_pos(&mut self) -> Pos {
-        self.hero().pos
     }
 
     fn tile_info(&self, pos: Pos) -> TileInfo {
@@ -132,7 +129,7 @@ impl Game {
     }
 
     fn mob_at_mut(&mut self, pos: Pos) -> &mut mob::Mob {
-        self.mobs.iter_mut().find(|m| m.pos == pos).expect("expected a mob at pos")
+        self.mobs.iter_mut().find(|m| m.pos() == pos).expect("expected a mob at pos")
     }
 
     fn hero(&self) -> &mob::Mob {
@@ -149,7 +146,7 @@ impl Game {
     }
 
     fn open_close(&mut self, dir: Direction) {
-        let dst = World::destination(self.hero_pos(), dir);
+        let dst = World::destination(self.hero().pos(), dir);
         let tile = self.world.at(dst).kind;
         match tile {
             TileKind::DoorClosed => self.world.set(dst, TileKind::DoorOpen),
@@ -159,7 +156,7 @@ impl Game {
     }
 
     fn auto(&mut self) {
-        let pos = self.hero_pos();
+        let pos = self.hero().pos();
         let ns  = self.world.adjacent(pos);
 
         for n in ns.iter() {

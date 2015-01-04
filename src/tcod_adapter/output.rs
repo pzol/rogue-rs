@@ -45,7 +45,8 @@ impl Output {
         }
 
         for mob in mobs.iter() {
-            self.con.put_char(mob.pos.x as int, mob.pos.y as int, mob.display_char, BackgroundFlag::Set);
+            let world::Pos { x, y } = mob.pos();
+            self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
         }
         Console::flush();
     }

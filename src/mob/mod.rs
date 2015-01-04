@@ -1,10 +1,11 @@
 use world::Pos;
+use std::cell::Cell;
 pub mod behavior;
 
 #[allow(dead_code)]
 #[deriving(Clone)]
 pub struct Mob {
-    pub pos: Pos,
+    pub pos: Cell<Pos>,
     pub display_char: char,
     pub name: String,
     pub kind: Kind,
@@ -21,7 +22,7 @@ impl<'a> Mob {
     pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: behavior::Kind) -> Mob {
         Mob {
             name: name.to_string(),
-            pos: Pos { x: x, y: y },
+            pos: Cell::new(Pos { x: x, y: y }),
             kind: kind,
             ap: 1, 
             hp: 10,
@@ -34,8 +35,12 @@ impl<'a> Mob {
         }
     }
 
-    pub fn goto(&mut self, pos: Pos) {
-        self.pos = pos;
+    pub fn pos(&self) -> Pos {
+        self.pos.get()
+    }
+
+    pub fn goto(&self, pos: Pos) {
+        self.pos.set(pos);
     }
 
     pub fn inc_hp(&mut self, hp: uint) {
