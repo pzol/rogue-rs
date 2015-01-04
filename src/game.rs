@@ -1,5 +1,7 @@
 extern crate collections;
 use std::rand::Rng;
+use std::cell::RefCell;
+
 use mob;
 use world::{ World, Direction, TileKind, Pos };
 use input;
@@ -8,9 +10,8 @@ use input::Command;
 
 pub struct Game {
     pub world: World,
-    pub mobs:  Vec<mob::Mob>
+    pub mobs: Vec<mob::Mob>
 }
-
 
 /// Combined information about what's going on on a tile
 /// which Mob, Items, etc
@@ -122,7 +123,12 @@ impl Game {
 
         let mut victim = self.mob_at_mut(pos);
         victim.dec_hp(dmg);
+
         println!("You hit {}, the {} for {}/{} hp!", victim.name, victim.kind, dmg, victim.hp);
+        if victim.hp < 0 {
+            println!("{}, the {} should die!", victim.name, victim.kind);
+        }
+        
     }
 
     fn mob_at_mut(&mut self, pos: Pos) -> &mut mob::Mob {

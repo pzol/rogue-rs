@@ -50,7 +50,8 @@ impl<'a> Mob {
 #[deriving(Copy, Clone, Show)]
 pub enum Kind {
     Hero   = '@' as int,
-    Canine = 'C' as int
+    Canine = 'C' as int,
+    Hobgoblin = 'h' as int
 }
 
 impl Kind {
