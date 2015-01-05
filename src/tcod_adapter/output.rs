@@ -17,6 +17,14 @@ impl Output {
     pub fn render(&mut self, mobs: &Vec<mob::Mob>, world: &world::World) {
         let pos = mobs[0].pos.get();
         let fov = fov::fov(pos, 8);
+
+        let mut los = vec![];
+
+        for dst in fov.iter() {
+            let ray = fov::ray(pos, *dst, |pos| world.at(pos).is_translucent());
+            los.push_all(ray.as_slice());
+        }
+
         self.con.clear();
 
         let dark_wall    = Color { r: 0,   g: 0,   b: 100 };
@@ -34,12 +42,12 @@ impl Output {
 
                 match tile.kind {
                     TileKind::Wall => {
-                        let color = if fov.contains(&cpos) { light_wall } else { dark_wall };
+                        let color = if los.contains(&cpos) { light_wall } else { dark_wall };
                         self.con.set_char_background(x, y,  color, BackgroundFlag::Set);
                         map.set(x, y, false, false)
                     }
                     _  => {
-                        let color = if fov.contains(&cpos) { light_ground } else { dark_ground };
+                        let color = if los.contains(&cpos) { light_ground } else { dark_ground };
                         self.con.set_char_background(x, y,  color, BackgroundFlag::Set);
                         self.con.put_char(x, y, tile.kind.to_char(), BackgroundFlag::None);
                         map.set(x, y, true, true)
@@ -52,7 +60,7 @@ impl Output {
         }
 
         for (i, mob) in mobs.iter().enumerate() {
-            if i == 0 || fov.contains(&mob.pos()) {
+            if i == 0 || los.contains(&mob.pos()) {
                 let world::Pos { x, y } = mob.pos();
                 self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
             }

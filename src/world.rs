@@ -18,6 +18,10 @@ impl Tile {
             _ => true
         }
     }
+
+    pub fn is_translucent(&self) -> bool {
+        self.is_walkable()
+    }
 }
 
 #[deriving(PartialEq, Show, FromPrimitive, Clone, Copy)]
