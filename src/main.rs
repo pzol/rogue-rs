@@ -9,6 +9,7 @@ mod tcod_adapter;
 mod input;
 mod mob;
 pub mod world;
+pub mod fov;
 mod game;
 
 fn main() {

@@ -2,6 +2,7 @@ extern crate collections;
 use std::rand::Rng;
 
 use mob;
+use mob::behavior as bhvr;
 use world::{ World, Direction, TileKind, Pos };
 use input;
 use input::Command;
@@ -36,10 +37,20 @@ impl TileInfo {
     }
 }
 
-enum Movement {
+enum Event {
     Goto(Pos),
     Attack(Pos),
     Obstacle(TileKind)
+}
+
+pub struct Surroundings {
+    tiles: Box<[TileInfo]>
+}
+
+impl Surroundings {
+    pub fn new(game: &Game, pos: Pos) -> Surroundings {
+        Surroundings { tiles: vec![].into_boxed_slice() }
+    }
 }
 
 impl Game {
@@ -63,25 +74,28 @@ impl Game {
     pub fn update_monsters(&self) {
         let hero_pos = self.hero().pos();
 
-        for m in self.monsters().iter() {
-            let dir = m.behavior.act(m, hero_pos);
-            let dst = World::destination(m.pos(), dir);
-
-            match self.try_move(dst) {
-                Movement::Goto(dst)      => m.goto(dst),
-                Movement::Attack(dst)    => println!("I have not learned to attack, yet."),
-                Movement::Obstacle(kind) => println!("There is a {}.", kind)
+        for (id, m) in self.monsters().iter().enumerate() {
+            match m.behavior.act(m, hero_pos) {
+                bhvr::Action::TryMove(dir) => {
+                    let dst = World::destination(m.pos(), dir);
+                    match self.try_move(dst) {
+                        Event::Goto(dst)      => m.goto(dst),
+                        Event::Attack(dst)    => println!("I have not learned to attack, yet."),
+                        Event::Obstacle(kind) => println!("There is a {}.", kind)
+                    }
+                },
+                _ => println!("nop")
             }
         }
     }
 
-    fn try_move(&self, dst: Pos) -> Movement {
+    fn try_move(&self, dst: Pos) -> Event {
         let tile = self.tile_info(dst);
 
         match tile {
-            TileInfo { is_walkable: true, mob: Some(_), ..} => Movement::Attack(dst),
-            TileInfo { is_walkable: true, mob: None, ..}    => Movement::Goto(dst),
-            _ => Movement::Obstacle(tile.kind)
+            TileInfo { is_walkable: true, mob: Some(_), ..} => Event::Attack(dst),
+            TileInfo { is_walkable: true, mob: None, ..}    => Event::Goto(dst),
+            _ => Event::Obstacle(tile.kind)
         }
     }
 

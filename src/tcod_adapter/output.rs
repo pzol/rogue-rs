@@ -1,5 +1,6 @@
 use tcod::{ Console, BackgroundFlag, Color, Map };
 use world;
+use fov;
 use mob;
 use world::TileKind;
 
@@ -14,12 +15,14 @@ impl Output {
     }
 
     pub fn render(&mut self, mobs: &Vec<mob::Mob>, world: &world::World) {
+        let pos = mobs[0].pos.get();
+        let fov = fov::fov(pos, 8);
         self.con.clear();
 
         let dark_wall    = Color { r: 0,   g: 0,   b: 100 };
-        // let light_wall   = Color { r: 130, g: 110, b: 50  };
+        let light_wall   = Color { r: 130, g: 110, b: 50  };
         let dark_ground  = Color { r: 50,  g: 50,  b: 150 };
-        // let light_ground = Color { r: 200, g: 180, b: 50  };
+        let light_ground = Color { r: 200, g: 180, b: 50  };
 
         let mut map = Map::new(80, 50);
         let mut y = 0i;
@@ -27,13 +30,17 @@ impl Output {
         for line in world.map.iter() {
             let mut x = 0i;
             for tile in line.iter() {
+                let cpos = world::Pos { x: x as uint, y: y as uint};
+
                 match tile.kind {
                     TileKind::Wall => {
-                        self.con.set_char_background(x, y,  dark_wall, BackgroundFlag::Set);
+                        let color = if fov.contains(&cpos) { light_wall } else { dark_wall };
+                        self.con.set_char_background(x, y,  color, BackgroundFlag::Set);
                         map.set(x, y, false, false)
                     }
                     _  => {
-                        self.con.set_char_background(x, y,  dark_ground, BackgroundFlag::Set);
+                        let color = if fov.contains(&cpos) { light_ground } else { dark_ground };
+                        self.con.set_char_background(x, y,  color, BackgroundFlag::Set);
                         self.con.put_char(x, y, tile.kind.to_char(), BackgroundFlag::None);
                         map.set(x, y, true, true)
                     }
@@ -44,9 +51,11 @@ impl Output {
             y += 1;
         }
 
-        for mob in mobs.iter() {
-            let world::Pos { x, y } = mob.pos();
-            self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
+        for (i, mob) in mobs.iter().enumerate() {
+            if i == 0 || fov.contains(&mob.pos()) {
+                let world::Pos { x, y } = mob.pos();
+                self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
+            }
         }
         Console::flush();
     }
