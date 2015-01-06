@@ -1,7 +1,22 @@
-use world::Pos;
+use world::{ Pos, World };
 
 use std::cmp::{ min, max };
 use std::num::SignedInt;
+
+pub fn los(pos: Pos, world: &World) -> Vec<Pos> {
+    let fov = fov(pos, 8);
+
+    let mut los = vec![];
+
+    for dst in fov.iter() {
+        let ray = ray(pos, *dst, |pos| world.at(pos).is_translucent());
+        los.push_all(ray.as_slice());
+    }
+
+    los.sort();
+    los.dedup();
+    los
+}
 
 pub fn fov(pos: Pos, radius: u32) -> Vec<Pos> {
     let Pos { x: cx, y: cy } = pos;
@@ -24,9 +39,8 @@ pub fn fov(pos: Pos, radius: u32) -> Vec<Pos> {
     ns
 }
 
-
 // Bresenham's line algorithm
-pub fn ray(from: Pos, to: Pos, visit: |Pos| -> bool) -> Vec<Pos> {
+pub fn ray<F: Fn(Pos) -> bool>(from: Pos, to: Pos, visit: F) -> Vec<Pos> {
     let mut ray = vec![];
 
     let mut dx = (to.x as i32 - from.x as i32).abs();

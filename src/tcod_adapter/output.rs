@@ -16,14 +16,7 @@ impl Output {
 
     pub fn render(&mut self, mobs: &Vec<mob::Mob>, world: &world::World) {
         let pos = mobs[0].pos.get();
-        let fov = fov::fov(pos, 8);
-
-        let mut los = vec![];
-
-        for dst in fov.iter() {
-            let ray = fov::ray(pos, *dst, |pos| world.at(pos).is_translucent());
-            los.push_all(ray.as_slice());
-        }
+        let los = fov::los(pos, world);
 
         self.con.clear();
 
