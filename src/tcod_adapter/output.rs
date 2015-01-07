@@ -1,4 +1,5 @@
 use tcod::{ Console, BackgroundFlag, Color, Map };
+use geo;
 use world;
 use fov;
 use mob;
@@ -16,7 +17,7 @@ impl Output {
 
     pub fn render(&mut self, mobs: &Vec<mob::Mob>, world: &world::World) {
         let pos = mobs[0].pos.get();
-        let los = fov::los(pos, world);
+        let los = fov::los(pos, |pos| world.at(pos).is_translucent());
 
         self.con.clear();
 
@@ -31,7 +32,7 @@ impl Output {
         for line in world.map.iter() {
             let mut x = 0i;
             for tile in line.iter() {
-                let cpos = world::Pos { x: x as uint, y: y as uint};
+                let cpos = geo::Pos(x as uint, y as uint);
 
                 match tile.kind {
                     TileKind::Wall => {
@@ -54,7 +55,7 @@ impl Output {
 
         for (i, mob) in mobs.iter().enumerate() {
             if i == 0 || los.contains(&mob.pos()) {
-                let world::Pos { x, y } = mob.pos();
+                let geo::Pos(x, y) = mob.pos();
                 self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
             }
         }

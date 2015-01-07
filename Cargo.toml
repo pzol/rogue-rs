@@ -1,6 +1,6 @@
 [package]
 
-name = "rogue"
+name = "moria"
 version = "0.0.1"
 authors = ["Piotr Zolnierek <pzolnierek@gmail.com>"]
 
@@ -8,3 +8,5 @@ authors = ["Piotr Zolnierek <pzolnierek@gmail.com>"]
 [dependencies.tcod]
 git = "https://github.com/tomassedovic/tcod-rs.git"
 
+[dependencies.rogue]
+path = "./rogue"

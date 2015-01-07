@@ -1,9 +1,11 @@
-use world;
 use input::Command;
 use game::MobInfo;
 use mob;
+use dice;
+use geo;
+use geo::Pos;
+use world::TileKind;
 
-use std::rand::Rng;
 use std::num::FromPrimitive;
 use std::num::SignedInt;
 
@@ -14,8 +16,9 @@ pub enum Kind {
 }
 
 pub enum Action {
-    TryMove(world::Direction),
+    TryMove(geo::Dir),
     Nothing,
+    OpenClose(geo::Dir),
     Rest
 }
 
@@ -41,7 +44,7 @@ impl Behavior for Hero {
     fn act(&self, mob: &mob::Mob, info: MobInfo) -> Action {
         for tile in info.tiles.iter() {
             if let Some(ref monster) = tile.mob {
-                println!("There is a {} the {}", monster.name, monster.kind);
+                println!("    sees a {} the {}", monster.name, monster.kind);
             }
         }
 
@@ -51,7 +54,12 @@ impl Behavior for Hero {
             // Command::Close(direction) => self.open_close(direction),
             Command::Rest             => { mob.inc_hp(1); Action::Nothing },
             Command::Auto             => {
-                println!("{}", info.adjacent());
+                for &(dir, tile_kind) in info.adjacent().iter() {
+                    match tile_kind {
+                        TileKind::DoorClosed | TileKind::DoorOpen => return Action::OpenClose(dir),
+                        _ => ()
+                    }
+                }
 
                 Action::Nothing
             },
@@ -66,24 +74,23 @@ pub struct Random;
 impl Behavior for Random {
 
     fn act(&self, mob: &mob::Mob, info: MobInfo) -> Action {
-        println!("+ {}", mob.name);
         for tile in info.tiles.iter() {
             if let Some(ref monster) = tile.mob {
                 let from = mob.pos.get();
-                let to   = monster.pos.get();
+                let Pos(from_x, from_y) = from; 
+                let Pos(to_x, to_y)     = monster.pos.get();
 
-                let dx = (to.x as i32 - from.x as i32).signum();
-                let dy = (to.y as i32 - from.y as i32).signum();
+                let dx = (to_x as i32 - from_x as i32).signum();
+                let dy = (to_y as i32 - from_y as i32).signum();
 
-                let dst = world::Pos { x: from.x + dx as uint, y: from.y + dy as uint };
-                println!("{} the {}, sees a {}, dst {}", mob.name, mob.kind, monster.kind, dst);
+                let dst = geo::Pos(from_x + dx as uint, from_y + dy as uint);
+                println!("  sees {}, dst {}, moves towards it", monster.kind, dst);
                 return Action::TryMove(from.dir(dst));
-
             }
         }
 
-        let mut rng = ::std::rand::thread_rng();
-        let idir = rng.gen_range(world::Direction::NW as uint, world::Direction::SE as uint);
+        let idir = dice::rand(geo::Dir::NW as uint, geo::Dir::SE as uint);
+        println!("  wanders around aimlessly");
 
         match FromPrimitive::from_int(idir as int) {
             Some(dir) => Action::TryMove(dir),

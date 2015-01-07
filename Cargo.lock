@@ -1,9 +1,14 @@
 [root]
-name = "rogue"
+name = "moria"
 version = "0.0.1"
 dependencies = [
+ "rogue 0.0.2",
  "tcod 0.3.0 (git+https://github.com/tomassedovic/tcod-rs.git)",
 ]
+
+[[package]]
+name = "rogue"
+version = "0.0.2"
 
 [[package]]
 name = "tcod"

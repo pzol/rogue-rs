@@ -1,38 +1,37 @@
-use world::Pos;
+use geo::Pos;
+use dice;
 
 use std::cell::Cell;
-use std::rand::Rng;
 use std::num::FromPrimitive;
 
 pub mod behavior;
 
 pub fn rnd() -> Mob {
-    let mut rng = ::std::rand::thread_rng();
-    let rnd = rng.gen_range(1, 4);
-    let rx  = rng.gen_range(1, 80); //FIXME
-    let ry  = rng.gen_range(1, 50);
+    let rnd = dice::rand(1, 4);
+    let rx  = dice::rand(1, 80); //FIXME
+    let ry  = dice::rand(1, 50);
 
     match FromPrimitive::from_int(rnd as int) {
         Some(kind) => match kind {
             Kind::Canine => Mob {
                 name: "Fido".to_string(),
-                pos: Cell::new(Pos { x: rx, y: ry }),
+                pos: Cell::new(Pos(rx, ry)),
                 kind: kind,
-                hp: Cell::new(7), str: 5,
+                hp: Cell::new(7), str: 2,
                 ap: 1, int: 7, con: 7, dex: 7, display_char: kind.to_char(), behavior: behavior::Kind::Animalic
             },
             Kind::Hobgoblin => Mob {
                 name: "Gardhur".to_string(),
-                pos: Cell::new(Pos { x: rx, y: ry }),
+                pos: Cell::new(Pos(rx, ry)),
                 kind: kind,
-                hp: Cell::new(12), str: 12,
+                hp: Cell::new(12), str: 5,
                 ap: 1, int: 7, con: 7, dex: 7, display_char: kind.to_char(), behavior: behavior::Kind::Animalic
             },
             Kind::Orc => Mob {
                 name: "Gardhur".to_string(),
-                pos: Cell::new(Pos { x: rx, y: ry }),
+                pos: Cell::new(Pos(rx, ry)),
                 kind: kind,
-                hp: Cell::new(15), str: 14,
+                hp: Cell::new(15), str: 3,
                 ap: 1, int: 7, con: 7, dex: 7, display_char: kind.to_char(), behavior: behavior::Kind::Animalic
             },
             _ => panic!("Can't spawn a hero")
@@ -61,10 +60,10 @@ impl<'a> Mob {
     pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: behavior::Kind) -> Mob {
         Mob {
             name: name.to_string(),
-            pos: Cell::new(Pos { x: x, y: y }),
+            pos: Cell::new(Pos(x, y)),
             kind: kind,
             ap: 1, 
-            hp: Cell::new(10),
+            hp: Cell::new(20),
             str: 7,
             int: 7,
             con: 7,

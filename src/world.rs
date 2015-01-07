@@ -1,42 +1,8 @@
-use self::Direction::*;
+use geo;
+use geo::{ Dir, Pos };
+use geo::Dir::*;
 
-use std::cmp::{ min, max };
-use std::num::SignedInt;
 use std::num::FromPrimitive;
-
-#[derive(Copy, Clone, PartialEq, Eq, Show, PartialOrd, Ord)]
-pub struct Pos {
-    pub x: uint,
-    pub y: uint
-}
-
-impl Pos {
-    pub fn dist(&self, other: Pos) -> u32 {
-        let mut dx = (other.x as i32 - self.x as i32).abs() as u32;
-        let mut dy = (other.y as i32 - self.y as i32).abs() as u32;
-
-        max(dx, dy) + (min(dx, dy) / 2 )
-    }
-
-    pub fn dir(&self, other: Pos) -> Direction {
-        if self.dist(other) > 1 {
-            panic!("other is too far away")
-        };
-
-        match (other.x as i32 - self.x as i32, other.y as i32 - self.y as i32) {
-            ( 0,  0) => H,
-            (-1, -1) => NW,
-            ( 0, -1) => N,
-            ( 1, -1) => NE,
-            (-1,  0) => W,
-            ( 1,  0) => E,
-            (-1,  1) => SW,
-            ( 0,  1) => S,
-            ( 1,  1) => SE,
-            (_, _)   => panic!("undefined direction")
-        }
-    }
-}
 
 #[derive(Copy, Clone)]
 pub struct Tile {
@@ -157,35 +123,20 @@ impl World {
 
     /// return a tile a x, y of the map
     pub fn at(&self, pos: Pos) -> &Tile {
-        &self.map[pos.y][pos.x]
+        let Pos(x, y) = pos;
+        &self.map[y][x]
     }
 
     pub fn set(&mut self, pos: Pos, kind: TileKind) {
-        self.map[pos.y][pos.x].kind = kind
+        let Pos(x, y) = pos;
+        self.map[y][x].kind = kind
     }
 
-    pub fn destination(pos: Pos, dir: Direction) -> Pos {
-        let Pos { x, y } = pos;
-        let (dx, dy) = match dir {
-            H  => (x,     y),
-            NW => (x - 1, y - 1),
-            N  => (x,     y - 1),
-            NE => (x + 1, y - 1),
-            W  => (x - 1, y),
-            E  => (x + 1, y),
-            SW => (x - 1, y + 1),
-            S  => (x,     y + 1),
-            SE => (x + 1, y + 1),
-        };
-
-        Pos { x: dx, y: dy }
-    }
-
-    pub fn adjacent(&self, pos: Pos) -> Vec<(Direction, TileKind)> {
+    pub fn adjacent(&self, pos: Pos) -> Vec<(geo::Dir, TileKind)> {
         let dirs = [H, NW, N, NE, W, E, SW, S, SE];
         let mut ts = vec![];
         for dir in dirs.iter() {
-            let destination = World::destination(pos, *dir);
+            let destination = pos.dest(*dir);
             let tile_kind = self.at(destination).kind;
 
             match tile_kind {
@@ -196,12 +147,3 @@ impl World {
         ts
     }
 }
-
-#[derive(Clone, Copy, Show, FromPrimitive)]
-pub enum Direction {
-    H, // here
-    NW, N, NE,
-     W,     E,
-    SW, S, SE
-}
-

@@ -1,17 +1,18 @@
 extern crate collections;
-use std::rand::Rng;
 
 use mob;
 use fov;
 use mob::behavior as bhvr;
-use world::{ World, Direction, TileKind, Pos };
+use world::{ World, TileKind};
+use geo::{ Dir, Pos };
 use input;
 use input::Command;
-
+use dice;
 
 pub struct Game {
     pub world: World,
-    pub mobs: Vec<mob::Mob>
+    pub mobs: Vec<mob::Mob>,
+    pub turn: uint
 }
 
 /// Combined information about what's going on on a tile
@@ -41,6 +42,7 @@ impl TileInfo {
 enum Event {
     Goto(Pos),
     Attack(Pos),
+    OpenDoor(Pos),
     Obstacle(TileKind)
 }
 
@@ -53,14 +55,14 @@ pub struct MobInfo {
 
 impl MobInfo {
     pub fn new(game: &Game, pos: Pos, input: input::Command) -> MobInfo {
-        let mut los = fov::los(pos, &game.world);
+        let mut los = fov::los(pos, |pos| game.world.at(pos).is_translucent());
         los.retain(|t| *t != pos);
         let tiles : Vec<TileInfo> = los.iter().map(|pos| TileInfo::new(game, *pos)).collect();
 
         MobInfo { tiles: tiles.into_boxed_slice(), input: input, pos: pos }
     }
 
-    pub fn adjacent(&self) -> Vec<(Direction, TileKind)> {
+    pub fn adjacent(&self) -> Vec<(Dir, TileKind)> {
         (*self.tiles).iter().
             filter(|p| (**p).pos.dist(self.pos) == 1).
             map(|p| (self.pos.dir(p.pos), p.kind)).collect()
@@ -69,7 +71,7 @@ impl MobInfo {
 
 impl Game {
     pub fn new() -> Game {
-        Game { world: World::new(), mobs: vec![] }
+        Game { world: World::new(), mobs: vec![], turn: 0 }
     }
 
     pub fn add_mob(&mut self, mob: mob::Mob) {
@@ -81,12 +83,14 @@ impl Game {
     }
 
     pub fn update(&mut self, cmd: input::Command) {
-        println!("----------------------------------------------------------");
-        let mut corpses = vec![];
-        for (idx, mob) in self.mobs.iter().enumerate() {
+        let mut event_q = vec![];
+
+        self.turn += 1;
+        println!("[{}] ----------------------------------------------------------", self.turn);
+        for mob in self.mobs.iter() {
+            println!("+ {} the {}, hp: {}", mob.name, mob.kind, mob.hp.get());
             if mob.hp.get() == 0 {
-                println!("{} is dead", mob.kind);
-                corpses.push(idx);
+                println!("  has died");
                 continue;
             }
 
@@ -94,34 +98,41 @@ impl Game {
 
             match mob.behavior.act(mob, mob_info) {
                 bhvr::Action::TryMove(dir) => {
-                    let dst = World::destination(mob.pos(), dir);
+                    let dst = mob.pos().dest(dir);
                     match self.try_move(dst) {
                         Event::Goto(dst)      => mob.goto(dst),
                         Event::Attack(dst)    => {
-                            println!("attack");
                             let other = self.mob_at(dst);
                                 let dmg = Game::dmg(mob);
-                                println!("{} hits {} for {}", mob.kind, other.kind, dmg);
+                                println!("  hits {} for {}", other.kind, dmg);
                                 self.mob_at(dst).dec_hp(dmg);
                             },
-                        Event::Obstacle(kind) => println!("There is a {}.", kind)
+                        Event::Obstacle(kind) => println!("  bumps into a {}", kind),
+                        e @ _ => event_q.push(e)
                     }
                 },
-                _ => println!("nop")
+                bhvr::Action::OpenClose(dir) => {
+                    let dst = mob.pos().dest(dir); event_q.push(Event::OpenDoor(dst));
+                }
+                _ => println!("  does nothing")
+            }
+        }
+
+        for e in event_q.iter() {
+            match *e {
+                Event::OpenDoor(dst) => self.open_close(dst),
+                _ => unreachable!()
             }
         }
 
         self.mobs.retain(|mob| mob.hp.get() > 0);
-
-        println!("hero {}", self.hero());
-
         self.create_monster();
     }
 
     fn create_monster(&mut self) {
         let newbie = mob::rnd();
         if self.world.at(newbie.pos.get()).is_walkable() {
-            println!("{} is born at {}", newbie.kind, newbie.pos.get());
+            println!("+ a {} is born at {}", newbie.kind, newbie.pos.get());
             self.add_mob(newbie);
         }
     }
@@ -130,22 +141,12 @@ impl Game {
         let tile = self.tile_info(dst);
 
         match tile {
+            TileInfo { kind: TileKind::DoorClosed, .. }     => Event::OpenDoor(dst),
             TileInfo { is_walkable: true, mob: Some(_), ..} => Event::Attack(dst),
             TileInfo { is_walkable: true, mob: None, ..}    => Event::Goto(dst),
             _ => Event::Obstacle(tile.kind)
         }
     }
-
-    // fn walk(&mut self, dir: Direction) {
-    //     let dst  = World::destination(self.hero().pos(), dir);
-    //     let tile = self.tile_info(dst);
-
-    //     match tile {
-    //         TileInfo { is_walkable: true, mob: Some(_), ..} => self.attack(dst),
-    //         TileInfo { is_walkable: true, mob: None, ..}    => self.hero_mut().goto(dst),
-    //         _ => println!("There is a {}", tile.kind)
-    //     }
-    // }
 
     fn tile_info(&self, pos: Pos) -> TileInfo {
         TileInfo::new(self, pos)
@@ -156,16 +157,14 @@ impl Game {
     }
 
     fn hero(&self) -> &mob::Mob {
-        self.mobs.iter().find(|m| m.kind == mob::Kind::Hero).expect("The hero is dead!")
+        self.mobs.iter().find(|m| m.kind == mob::Kind::Hero).expect("You have died!")
     }
 
     fn dmg(mob: &mob::Mob) -> u32 {
-        let mut rng = ::std::rand::thread_rng();
-        rng.gen_range(1u, mob.str as uint) as u32
+        dice::Dice(1, 6).roll() as u32 + mob.str as u32
     }
 
-    fn open_close(&mut self, dir: Direction) {
-        let dst = World::destination(self.hero().pos(), dir);
+    fn open_close(&mut self, dst: Pos) {
         let tile = self.world.at(dst).kind;
         match tile {
             TileKind::DoorClosed => self.world.set(dst, TileKind::DoorOpen),
@@ -174,19 +173,19 @@ impl Game {
         }
     }
 
-    fn auto(&mut self) {
-        let pos = self.hero().pos();
-        let ns  = self.world.adjacent(pos);
+    // fn auto(&mut self) {
+    //     let pos = self.hero().pos();
+    //     let ns  = self.world.adjacent(pos);
 
-        for n in ns.iter() {
-            let (ref dir, ref tile_kind) = *n;
+    //     for n in ns.iter() {
+    //         let (ref dir, ref tile_kind) = *n;
 
-            match *tile_kind {
-                TileKind::DoorClosed => self.open_close(*dir),
-                TileKind::DoorOpen   => self.open_close(*dir),
-                _ => ()
-            }
-            println!("{} -> {}", dir.clone(), tile_kind)
-        }
-    }
+    //         match *tile_kind {
+    //             TileKind::DoorClosed => self.open_close(*dir),
+    //             TileKind::DoorOpen   => self.open_close(*dir),
+    //             _ => ()
+    //         }
+    //         println!("{} -> {}", dir.clone(), tile_kind)
+    //     }
+    // }
 }

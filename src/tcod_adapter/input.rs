@@ -5,7 +5,7 @@ use tcod::KeyCode::{Up, Down, Left, Right, Escape, Spacebar};
 
 use input;
 use input::Command;
-use world::Direction::*;
+use geo::Dir::*;
 
 pub struct Input;
 

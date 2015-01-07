@@ -1,4 +1,4 @@
-use world::Direction;
+use geo::Dir;
 
 pub trait Input {
     fn wait_for_action(&self) -> Command;
@@ -9,9 +9,9 @@ pub enum Command {
     Exit,
     Unknown(String),
 
-    Walk(Direction),
-    Open(Direction),
-    Close(Direction),
+    Walk(Dir),
+    Open(Dir),
+    Close(Dir),
     Rest,
     Auto,
     Look
