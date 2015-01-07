@@ -1,12 +1,44 @@
 use self::Direction::*;
 
-#[deriving(Copy, Clone, PartialEq, Show)]
+use std::cmp::{ min, max };
+use std::num::SignedInt;
+use std::num::FromPrimitive;
+
+#[derive(Copy, Clone, PartialEq, Eq, Show, PartialOrd, Ord)]
 pub struct Pos {
     pub x: uint,
     pub y: uint
 }
 
-#[deriving(Copy, Clone)]
+impl Pos {
+    pub fn dist(&self, other: Pos) -> u32 {
+        let mut dx = (other.x as i32 - self.x as i32).abs() as u32;
+        let mut dy = (other.y as i32 - self.y as i32).abs() as u32;
+
+        max(dx, dy) + (min(dx, dy) / 2 )
+    }
+
+    pub fn dir(&self, other: Pos) -> Direction {
+        if self.dist(other) > 1 {
+            panic!("other is too far away")
+        };
+
+        match (other.x as i32 - self.x as i32, other.y as i32 - self.y as i32) {
+            ( 0,  0) => H,
+            (-1, -1) => NW,
+            ( 0, -1) => N,
+            ( 1, -1) => NE,
+            (-1,  0) => W,
+            ( 1,  0) => E,
+            (-1,  1) => SW,
+            ( 0,  1) => S,
+            ( 1,  1) => SE,
+            (_, _)   => panic!("undefined direction")
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct Tile {
     pub kind: TileKind
 }
@@ -24,7 +56,7 @@ impl Tile {
     }
 }
 
-#[deriving(PartialEq, Show, FromPrimitive, Clone, Copy)]
+#[derive(PartialEq, Show, FromPrimitive, Clone, Copy)]
 pub enum TileKind {
     Floor       = ' ' as int,
     Wall        = '#' as int,
@@ -53,7 +85,7 @@ pub struct World {
     pub map: Vec<Vec<Tile>>
 }
 
-const DEMO_MAP : [&'static str, ..51] = [
+const DEMO_MAP : [&'static str; 51] = [
     "#################################################################################",
     "#######################      ##################################       ###########",
     "#####################    #     ############################     ##### ###########",
@@ -165,7 +197,7 @@ impl World {
     }
 }
 
-#[deriving(Clone, Copy, Show, FromPrimitive)]
+#[derive(Clone, Copy, Show, FromPrimitive)]
 pub enum Direction {
     H, // here
     NW, N, NE,

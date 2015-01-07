@@ -4,7 +4,7 @@ pub trait Input {
     fn wait_for_action(&self) -> Command;
 }
 
-#[deriving(Clone, Show)]
+#[derive(Clone, Show)]
 pub enum Command {
     Exit,
     Unknown(String),
