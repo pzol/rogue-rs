@@ -32,7 +32,7 @@ impl Output {
         for line in world.map.iter() {
             let mut x = 0i;
             for tile in line.iter() {
-                let cpos = geo::Pos(x as uint, y as uint);
+                let cpos = geo::Pos(x as i32, y as i32);
 
                 match tile.kind {
                     TileKind::Wall => {

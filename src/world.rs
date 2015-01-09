@@ -124,12 +124,12 @@ impl World {
     /// return a tile a x, y of the map
     pub fn at(&self, pos: Pos) -> &Tile {
         let Pos(x, y) = pos;
-        &self.map[y][x]
+        &self.map[y as uint][x as uint]
     }
 
     pub fn set(&mut self, pos: Pos, kind: TileKind) {
         let Pos(x, y) = pos;
-        self.map[y][x].kind = kind
+        self.map[y as uint][x as uint].kind = kind
     }
 
     pub fn adjacent(&self, pos: Pos) -> Vec<(geo::Dir, TileKind)> {

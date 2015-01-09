@@ -47,17 +47,17 @@ pub struct Mob {
     pub display_char: char,
     pub name: String,
     pub kind: Kind,
-    pub str: uint,
-    int: uint,
-    con: uint,
-    dex: uint,
-    ap: uint,
+    pub str: u32,
+    int: u32,
+    con: u32,
+    dex: u32,
+    ap: u32,
     pub hp: Cell<u32>,
     pub behavior: behavior::Kind
 }
 
 impl<'a> Mob {
-    pub fn new(name: &'a str, kind: Kind, x: uint, y: uint, behavior: behavior::Kind) -> Mob {
+    pub fn new(name: &'a str, kind: Kind, x: i32, y: i32, behavior: behavior::Kind) -> Mob {
         Mob {
             name: name.to_string(),
             pos: Cell::new(Pos(x, y)),

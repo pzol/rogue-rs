@@ -1,4 +1,4 @@
-#![feature(globs, slicing_syntax)]
+#![feature(slicing_syntax)]
 extern crate tcod;
 extern crate rogue;
 

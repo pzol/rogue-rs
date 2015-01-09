@@ -83,7 +83,7 @@ impl Behavior for Random {
                 let dx = (to_x as i32 - from_x as i32).signum();
                 let dy = (to_y as i32 - from_y as i32).signum();
 
-                let dst = geo::Pos(from_x + dx as uint, from_y + dy as uint);
+                let dst = geo::Pos(from_x + dx, from_y + dy);
                 println!("  sees {}, dst {}, moves towards it", monster.kind, dst);
                 return Action::TryMove(from.dir(dst));
             }
