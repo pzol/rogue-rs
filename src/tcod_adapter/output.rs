@@ -11,7 +11,7 @@ pub struct Output {
 
 impl Output {
     pub fn new(world: &world::World) -> Output {
-        let con = Console::init_root(world.max_x as int + 1, world.max_y as int + 1, "Rogue", false);
+        let con = Console::init_root(world.max_x as isize + 1, world.max_y as isize + 1, "Rogue", false);
         Output { con: con }
     }
 
@@ -27,10 +27,10 @@ impl Output {
         let light_ground = Color { r: 200, g: 180, b: 50  };
 
         let mut map = Map::new(80, 50);
-        let mut y = 0i;
+        let mut y = 0;
 
         for line in world.map.iter() {
-            let mut x = 0i;
+            let mut x = 0;
             for tile in line.iter() {
                 let cpos = geo::Pos(x as i32, y as i32);
 
@@ -56,7 +56,7 @@ impl Output {
         for (i, mob) in mobs.iter().enumerate() {
             if i == 0 || los.contains(&mob.pos()) {
                 let geo::Pos(x, y) = mob.pos();
-                self.con.put_char(x as int, y as int, mob.display_char, BackgroundFlag::Set);
+                self.con.put_char(x as isize, y as isize, mob.display_char, BackgroundFlag::Set);
             }
         }
         Console::flush();

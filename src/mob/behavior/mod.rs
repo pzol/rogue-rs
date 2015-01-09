@@ -25,8 +25,8 @@ pub enum Action {
 impl Kind {
     pub fn act(&self, mob: &mob::Mob, info: MobInfo) -> Action {
         let behvr = match *self {
-            Kind::Animalic => box Random as Box<Behavior>,
-            Kind::Heroic   => box Hero as Box<Behavior>,
+            Kind::Animalic => Box::new(Random) as Box<Behavior>,
+            Kind::Heroic   => Box::new(Hero)   as Box<Behavior>,
             // _        => panic!("{} has no defined behavior")
         };
 
@@ -44,7 +44,7 @@ impl Behavior for Hero {
     fn act(&self, mob: &mob::Mob, info: MobInfo) -> Action {
         for tile in info.tiles.iter() {
             if let Some(ref monster) = tile.mob {
-                println!("    sees a {} the {}", monster.name, monster.kind);
+                println!("    sees a {} the {:?}", monster.name, monster.kind);
             }
         }
 
@@ -84,15 +84,15 @@ impl Behavior for Random {
                 let dy = (to_y as i32 - from_y as i32).signum();
 
                 let dst = geo::Pos(from_x + dx, from_y + dy);
-                println!("  sees {}, dst {}, moves towards it", monster.kind, dst);
+                println!("  sees {:?}, dst {:?}, moves towards it", monster.kind, dst);
                 return Action::TryMove(from.dir(dst));
             }
         }
 
-        let idir = dice::rand(geo::Dir::NW as uint, geo::Dir::SE as uint);
+        let idir = dice::rand(geo::Dir::NW as usize, geo::Dir::SE as usize);
         println!("  wanders around aimlessly");
 
-        match FromPrimitive::from_int(idir as int) {
+        match FromPrimitive::from_int(idir as isize) {
             Some(dir) => Action::TryMove(dir),
             None      => Action::Nothing
         }

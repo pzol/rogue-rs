@@ -12,7 +12,7 @@ use dice;
 pub struct Game {
     pub world: World,
     pub mobs: Vec<mob::Mob>,
-    pub turn: uint
+    pub turn: usize
 }
 
 /// Combined information about what's going on on a tile
@@ -88,7 +88,7 @@ impl Game {
         self.turn += 1;
         println!("[{}] ----------------------------------------------------------", self.turn);
         for mob in self.mobs.iter() {
-            println!("+ {} the {}, hp: {}", mob.name, mob.kind, mob.hp.get());
+            println!("+ {} the {:?}, hp: {}", mob.name, mob.kind, mob.hp.get());
             if mob.hp.get() == 0 {
                 println!("  has died");
                 continue;
@@ -104,10 +104,10 @@ impl Game {
                         Event::Attack(dst)    => {
                             let other = self.mob_at(dst);
                                 let dmg = Game::dmg(mob);
-                                println!("  hits {} for {}", other.kind, dmg);
+                                println!("  hits {:?} for {}", other.kind, dmg);
                                 self.mob_at(dst).dec_hp(dmg);
                             },
-                        Event::Obstacle(kind) => println!("  bumps into a {}", kind),
+                        Event::Obstacle(kind) => println!("  bumps into a {:?}", kind),
                         e @ _ => event_q.push(e)
                     }
                 },
@@ -132,7 +132,7 @@ impl Game {
     fn create_monster(&mut self) {
         let newbie = mob::rnd();
         if self.world.at(newbie.pos.get()).is_walkable() {
-            println!("+ a {} is born at {}", newbie.kind, newbie.pos.get());
+            println!("+ a {:?} is born at {:?}", newbie.kind, newbie.pos.get());
             self.add_mob(newbie);
         }
     }

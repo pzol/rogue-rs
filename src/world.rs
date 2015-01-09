@@ -24,30 +24,30 @@ impl Tile {
 
 #[derive(PartialEq, Show, FromPrimitive, Clone, Copy)]
 pub enum TileKind {
-    Floor       = ' ' as int,
-    Wall        = '#' as int,
-    DoorClosed  = '+' as int,
-    DoorOpen    = ',' as int,
-    StairsUp    = '<' as int,
-    StairsDown  = '>' as int
+    Floor       = ' ' as isize,
+    Wall        = '#' as isize,
+    DoorClosed  = '+' as isize,
+    DoorOpen    = ',' as isize,
+    StairsUp    = '<' as isize,
+    StairsDown  = '>' as isize
 }
 
 impl TileKind {
     fn from_char(stile: char) -> TileKind {
-        match FromPrimitive::from_int(stile as int) {
+        match FromPrimitive::from_int(stile as isize) {
             Some(tile) => tile,
             None       => TileKind::Floor
         }
     }
 
     pub fn to_char(&self) -> char {
-        (*self).clone() as int as u8 as char
+        (*self).clone() as isize as u8 as char
     }
 }
 
 pub struct World {
-    pub max_x: uint,
-    pub max_y: uint,
+    pub max_x: usize,
+    pub max_y: usize,
     pub map: Vec<Vec<Tile>>
 }
 
@@ -118,18 +118,18 @@ impl World {
             }
             map.push(line);
         }
-        World { max_x: 80u, max_y: 50u, map: map }
+        World { max_x: 80, max_y: 50, map: map }
     }
 
     /// return a tile a x, y of the map
     pub fn at(&self, pos: Pos) -> &Tile {
         let Pos(x, y) = pos;
-        &self.map[y as uint][x as uint]
+        &self.map[y as usize][x as usize]
     }
 
     pub fn set(&mut self, pos: Pos, kind: TileKind) {
         let Pos(x, y) = pos;
-        self.map[y as uint][x as uint].kind = kind
+        self.map[y as usize][x as usize].kind = kind
     }
 
     pub fn adjacent(&self, pos: Pos) -> Vec<(geo::Dir, TileKind)> {

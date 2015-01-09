@@ -45,7 +45,7 @@ impl input::Input for Input {
                              Printable('R') => Command::Rest,
                              Printable('l') => Command::Look,
             Special(Spacebar)               => Command::Auto,
-            _ => Command::Unknown(format!("Unmapped key {}", key).to_string())
+            _ => Command::Unknown(format!("Unmapped key {:?}", key).to_string())
         }
     }
 }

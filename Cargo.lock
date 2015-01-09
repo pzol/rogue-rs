@@ -3,7 +3,7 @@ name = "moria"
 version = "0.0.1"
 dependencies = [
  "rogue 0.0.2",
- "tcod 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tcod 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -12,7 +12,7 @@ version = "0.0.2"
 
 [[package]]
 name = "tcod"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "tcod-sys 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
